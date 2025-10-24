@@ -1,0 +1,94 @@
+const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const authMiddleware = require('../middleware/auth');
+const Analysis = require('../models/Analysis');
+const { callModelService } = require('../utils/modelClient');
+
+const router = express.Router();
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../../uploads');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}${path.extname(file.originalname)}`;
+    cb(null, uniqueName);
+  }
+});
+
+const upload = multer({ storage });
+
+// POST /api/plant/analyze - Upload and analyze plant image
+router.post('/analyze', authMiddleware, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'No image file provided' });
+    }
+
+    console.log('[PLANT] Analyzing image:', req.file.filename);
+    const filePath = req.file.path;
+
+    // Call model service
+    const modelResult = await callModelService(filePath);
+
+    // Save analysis to database
+    const analysis = await Analysis.create({
+      userId: req.user.id,
+      imagePath: `/uploads/${req.file.filename}`,
+      prediction: modelResult.prediction,
+      confidence: modelResult.confidence,
+      modelVersion: modelResult.model_version
+    });
+
+    console.log('[PLANT] Analysis saved:', analysis._id);
+
+    res.json({
+      success: true,
+      analysis: {
+        id: analysis._id,
+        prediction: analysis.prediction,
+        confidence: analysis.confidence,
+        modelVersion: analysis.modelVersion,
+        imagePath: analysis.imagePath,
+        createdAt: analysis.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('[PLANT] Analysis error:', error.message);
+    
+    // Clean up uploaded file on error
+    if (req.file && req.file.path) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (cleanupErr) {
+        console.error('[PLANT] Failed to cleanup file:', cleanupErr.message);
+      }
+    }
+    
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// GET /api/plant/last - Get last 5 analyses for user
+router.get('/last', authMiddleware, async (req, res) => {
+  try {
+    const analyses = await Analysis.find({ userId: req.user.id })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('-userId');
+
+    res.json({ success: true, analyses });
+  } catch (error) {
+    console.error('[PLANT] Error fetching analyses:', error.message);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+module.exports = router;

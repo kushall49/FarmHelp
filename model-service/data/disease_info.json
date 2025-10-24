@@ -1,0 +1,159 @@
+{
+  "tomato_late_blight": {
+    "description": "A devastating fungal disease caused by Phytophthora infestans that can destroy entire crops within days",
+    "symptoms": [
+      "Dark water-soaked lesions on leaves",
+      "White fuzzy mold growth on undersides of leaves",
+      "Brown spots on stems and fruit",
+      "Rapid spread in cool, humid conditions",
+      "Entire plants may collapse"
+    ],
+    "causes": [
+      "Phytophthora infestans fungus",
+      "High humidity (above 90%)",
+      "Cool temperatures (60-70°F / 15-21°C)",
+      "Poor air circulation",
+      "Overhead watering",
+      "Infected plant debris"
+    ],
+    "severity": "critical"
+  },
+  "tomato_early_blight": {
+    "description": "Common fungal disease caused by Alternaria solani, characterized by target-like spots on leaves",
+    "symptoms": [
+      "Brown spots with concentric rings (target pattern)",
+      "Yellowing of older leaves first",
+      "Premature leaf drop",
+      "Spots may appear on stems and fruit",
+      "Reduced yield"
+    ],
+    "causes": [
+      "Alternaria solani fungus",
+      "Warm humid weather",
+      "Overhead watering",
+      "Poor plant nutrition",
+      "Stressed plants",
+      "Contaminated soil"
+    ],
+    "severity": "medium"
+  },
+  "tomato_healthy": {
+    "description": "Plant shows no signs of disease and exhibits normal, vigorous growth",
+    "symptoms": [
+      "Vibrant green foliage",
+      "Strong stem structure",
+      "No discoloration or lesions",
+      "Normal growth rate",
+      "Good fruit set"
+    ],
+    "causes": [],
+    "severity": "low"
+  },
+  "tomato_bacterial_spot": {
+    "description": "Bacterial disease causing small dark spots on leaves and fruit",
+    "symptoms": [
+      "Small dark spots with yellow halos",
+      "Leaf yellowing and drop",
+      "Fruit with raised brown spots",
+      "Reduced yield"
+    ],
+    "causes": [
+      "Xanthomonas bacteria",
+      "Warm humid conditions",
+      "Water splash from rain or irrigation",
+      "Contaminated seeds or transplants"
+    ],
+    "severity": "high"
+  },
+  "tomato_leaf_mold": {
+    "description": "Fungal disease most common in greenhouse tomatoes",
+    "symptoms": [
+      "Yellow spots on upper leaf surface",
+      "Olive-green to gray-brown mold on undersides",
+      "Leaf curl and drop",
+      "Reduced photosynthesis"
+    ],
+    "causes": [
+      "Passalora fulva fungus",
+      "High humidity (above 85%)",
+      "Poor ventilation",
+      "Dense plant growth"
+    ],
+    "severity": "medium"
+  },
+  "potato_late_blight": {
+    "description": "Same pathogen as tomato late blight, devastating to potato crops",
+    "symptoms": [
+      "Dark lesions on leaves and stems",
+      "Tuber rot with brown discoloration",
+      "Rapid disease progression",
+      "Total crop loss possible"
+    ],
+    "causes": [
+      "Phytophthora infestans",
+      "Cool moist conditions",
+      "Infected seed potatoes"
+    ],
+    "severity": "critical"
+  },
+  "potato_early_blight": {
+    "description": "Fungal disease affecting potato foliage and tubers",
+    "symptoms": [
+      "Brown spots with concentric rings",
+      "Lower leaves affected first",
+      "Tuber lesions",
+      "Reduced yield"
+    ],
+    "causes": [
+      "Alternaria solani",
+      "Warm dry conditions",
+      "Nutrient deficiency"
+    ],
+    "severity": "medium"
+  },
+  "corn_common_rust": {
+    "description": "Fungal disease causing rust-colored pustules on corn leaves",
+    "symptoms": [
+      "Circular to elongate rust pustules",
+      "Yellow halos around pustules",
+      "Premature leaf death",
+      "Reduced photosynthesis"
+    ],
+    "causes": [
+      "Puccinia sorghi fungus",
+      "Cool to moderate temperatures",
+      "High humidity"
+    ],
+    "severity": "medium"
+  },
+  "grape_black_rot": {
+    "description": "Serious fungal disease of grapes",
+    "symptoms": [
+      "Circular tan spots on leaves",
+      "Fruit mummies (shriveled grapes)",
+      "Black pycnidia in lesions",
+      "Severe yield loss"
+    ],
+    "causes": [
+      "Guignardia bidwellii fungus",
+      "Warm humid weather",
+      "Poor air circulation"
+    ],
+    "severity": "high"
+  },
+  "apple_scab": {
+    "description": "Most serious disease of apple trees",
+    "symptoms": [
+      "Olive-green to brown lesions on leaves",
+      "Velvety appearance",
+      "Fruit scabs and cracking",
+      "Premature fruit drop"
+    ],
+    "causes": [
+      "Venturia inaequalis fungus",
+      "Cool wet spring weather",
+      "Overhead irrigation"
+    ],
+    "severity": "high"
+  }
+}

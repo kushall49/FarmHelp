@@ -1,0 +1,12 @@
+PLACEHOLDER_IMAGE_FILE
+
+This is a placeholder for background.jpg
+Please replace this file with an actual image.
+
+Download a farming/agriculture background image from:
+- Unsplash.com
+- Pexels.com  
+- Pixabay.com
+
+Save it as: background.jpg (JPG format)
+Recommended size: 1920x1080 or larger

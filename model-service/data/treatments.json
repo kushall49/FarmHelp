@@ -1,0 +1,119 @@
+{
+  "tomato_late_blight": {
+    "chemical": "Apply copper-based fungicide or chlorothalonil every 7-10 days",
+    "organic": "Remove and destroy infected plants immediately. Apply neem oil as preventive",
+    "preventive": [
+      "Use certified disease-free seeds and transplants",
+      "Space plants for good air circulation",
+      "Avoid overhead watering - use drip irrigation",
+      "Apply mulch to prevent soil splash",
+      "Remove lower leaves that touch the ground",
+      "Rotate crops - don't plant tomatoes in same spot for 3 years"
+    ]
+  },
+  "tomato_early_blight": {
+    "chemical": "Apply chlorothalonil or mancozeb fungicide every 7-14 days",
+    "organic": "Use copper spray or baking soda solution (1 tbsp per gallon water)",
+    "preventive": [
+      "Apply thick organic mulch around plants",
+      "Water at soil level, keep foliage dry",
+      "Remove lower leaves as plant grows",
+      "Maintain adequate plant nutrition with balanced fertilizer",
+      "Stake plants for better air circulation",
+      "Rotate crops annually"
+    ]
+  },
+  "tomato_healthy": {
+    "chemical": null,
+    "organic": null,
+    "preventive": [
+      "Continue regular watering schedule",
+      "Monitor plants weekly for early disease signs",
+      "Maintain balanced fertilization",
+      "Prune suckers for better air flow",
+      "Keep garden area clean of debris",
+      "Use companion planting (basil, marigolds)"
+    ]
+  },
+  "tomato_bacterial_spot": {
+    "chemical": "Apply copper-based bactericide at first sign",
+    "organic": "No effective organic cure - focus on prevention and removal of infected plants",
+    "preventive": [
+      "Use certified disease-free seeds",
+      "Avoid overhead watering",
+      "Disinfect tools between plants",
+      "Remove and destroy infected plants",
+      "Don't work with plants when wet",
+      "3-year crop rotation"
+    ]
+  },
+  "tomato_leaf_mold": {
+    "chemical": "Apply chlorothalonil fungicide every 7-14 days",
+    "organic": "Improve ventilation, reduce humidity, apply sulfur-based fungicides",
+    "preventive": [
+      "Ensure excellent air circulation in greenhouses",
+      "Keep humidity below 85%",
+      "Space plants adequately",
+      "Remove lower leaves",
+      "Use resistant varieties",
+      "Sanitize greenhouse between crops"
+    ]
+  },
+  "potato_late_blight": {
+    "chemical": "Apply systemic fungicide (mancozeb, chlorothalonil) preventively",
+    "organic": "Destroy infected plants, use copper spray preventively",
+    "preventive": [
+      "Plant certified disease-free seed potatoes",
+      "Hill soil around plants to protect tubers",
+      "Monitor weather for blight-favorable conditions",
+      "Remove volunteer potatoes",
+      "Destroy infected plant debris",
+      "Harvest on dry days"
+    ]
+  },
+  "potato_early_blight": {
+    "chemical": "Apply mancozeb or chlorothalonil fungicide every 7-14 days",
+    "organic": "Use copper spray or sulfur-based fungicide",
+    "preventive": [
+      "Maintain adequate nitrogen levels",
+      "Avoid drought stress",
+      "Use resistant varieties",
+      "Rotate crops with non-solanaceous plants",
+      "Remove infected foliage",
+      "Destroy crop residue after harvest"
+    ]
+  },
+  "corn_common_rust": {
+    "chemical": "Apply azoxystrobin or propiconazole fungicide",
+    "organic": "Usually not economical to treat - use resistant varieties",
+    "preventive": [
+      "Plant resistant hybrids",
+      "Ensure adequate plant spacing",
+      "Maintain balanced fertility",
+      "Remove volunteer corn plants",
+      "Plow under crop residue"
+    ]
+  },
+  "grape_black_rot": {
+    "chemical": "Apply myclobutanil or mancozeb from bloom to 6 weeks after",
+    "organic": "Remove mummified fruit, apply copper or sulfur fungicides",
+    "preventive": [
+      "Prune for good air circulation",
+      "Remove all mummies from vines and ground",
+      "Apply fungicide starting at bud break",
+      "Train vines to keep fruit off ground",
+      "Remove infected leaves promptly"
+    ]
+  },
+  "apple_scab": {
+    "chemical": "Apply captan or myclobutanil starting at bud break",
+    "organic": "Apply sulfur or copper spray, rake and destroy fallen leaves",
+    "preventive": [
+      "Plant resistant varieties (Liberty, Freedom, Enterprise)",
+      "Rake and destroy fallen leaves in autumn",
+      "Prune for good air circulation",
+      "Avoid overhead irrigation",
+      "Apply dormant oil spray in early spring"
+    ]
+  }
+}

@@ -1,0 +1,135 @@
+version: '3.8'
+
+services:
+  # Flask ML Service
+  ml-service:
+    build:
+      context: ./model-service
+      dockerfile: Dockerfile
+    container_name: farmhelp-ml-service
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - MODEL_PATH=models/plant_disease_model.h5
+      - LOG_LEVEL=INFO
+    volumes:
+      # Persist trained models
+      - ml-models:/app/models
+      # Persist confirmed training data
+      - confirmed-data:/app/data/confirmed
+      # Persist logs
+      - ml-logs:/app/logs
+      # Mount uploads temporarily
+      - ml-uploads:/app/uploads
+    networks:
+      - farmhelp-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  # Node.js Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: farmhelp-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+      - PORT=8000
+      - MONGODB_URI=${MONGODB_URI}
+      - JWT_SECRET=${JWT_SECRET}
+      - FLASK_SERVICE_URL=http://ml-service:5000
+      - FLASK_TIMEOUT=30000
+      - FLASK_MAX_RETRIES=3
+      - FLASK_RETRY_DELAY=2000
+      - MIN_IMAGES_FOR_RETRAIN=100
+      - AUTO_RETRAIN_ENABLED=true
+      - AUTO_RETRAIN_SCHEDULE=0 2 * * 0
+    volumes:
+      # Persist uploaded images
+      - backend-uploads:/app/uploads
+      # Share confirmed data with ML service
+      - confirmed-data:/app/data/confirmed
+      # Persist logs
+      - backend-logs:/app/logs
+    networks:
+      - farmhelp-network
+    depends_on:
+      - ml-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "const http = require('http'); http.get('http://localhost:8000/', (res) => process.exit(res.statusCode === 200 ? 0 : 1));"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # MongoDB (Optional - if not using MongoDB Atlas)
+  # mongodb:
+  #   image: mongo:6
+  #   container_name: farmhelp-mongodb
+  #   ports:
+  #     - "27017:27017"
+  #   environment:
+  #     - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+  #     - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+  #     - MONGO_INITDB_DATABASE=farmmate
+  #   volumes:
+  #     - mongodb-data:/data/db
+  #     - mongodb-config:/data/configdb
+  #   networks:
+  #     - farmhelp-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #     start_period: 40s
+
+# Volumes for data persistence
+volumes:
+  ml-models:
+    driver: local
+  ml-logs:
+    driver: local
+  ml-uploads:
+    driver: local
+  backend-uploads:
+    driver: local
+  backend-logs:
+    driver: local
+  confirmed-data:
+    driver: local
+  # mongodb-data:
+  #   driver: local
+  # mongodb-config:
+  #   driver: local
+
+# Network for inter-service communication
+networks:
+  farmhelp-network:
+    driver: bridge
