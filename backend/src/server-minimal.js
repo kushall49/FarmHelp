@@ -101,7 +101,9 @@ app.use('/api/users', userRoutes);
 
 // Plant analysis routes - Disease detection & ML integration
 const plantUploadRoutes = require('./routes/plant-upload');
-app.use('/api/plant', plantUploadRoutes);
+const plantRoutes = require('./routes/plant');
+app.use('/api/plant', plantUploadRoutes);  // Handles /upload-plant
+app.use('/api/plant', plantRoutes);        // Handles /analyze and /last
 
 // Chatbot route - AI farming assistant
 app.post('/api/chatbot', async (req, res) => {
@@ -158,7 +160,9 @@ app.use((req, res, next) => {
       'GET /api/jobs',
       'POST /api/jobs',
       'POST /api/users/rate/:providerId',
-      'POST /api/plant/upload-plant',
+      'POST /api/plant/analyze',        // Frontend-compatible endpoint
+      'GET /api/plant/last',             // Get user's last 5 analyses
+      'POST /api/plant/upload-plant',    // Alternative upload endpoint
       'POST /api/chatbot'
     ]
   });

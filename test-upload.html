@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Plant Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #preview {
+            max-width: 100%;
+            margin: 20px 0;
+            border: 1px solid #ddd;
+        }
+        .log {
+            background: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .info { color: #2196F3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 Test Plant Image Upload</h1>
+        <p>This directly tests the backend /api/plant/analyze endpoint</p>
+        
+        <input type="file" id="fileInput" accept="image/*" />
+        <button onclick="selectImage()">1. Select Image</button>
+        <br>
+        <img id="preview" style="display:none;" />
+        <br>
+        <button onclick="uploadImage()" id="uploadBtn" disabled>2. Upload & Analyze</button>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let selectedBlob = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[TEST] ${message}`);
+        }
+
+        async function selectImage() {
+            document.getElementById('fileInput').click();
+        }
+
+        document.getElementById('fileInput').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            log(`✅ File selected: ${file.name}`, 'success');
+            log(`   Size: ${file.size} bytes`, 'info');
+            log(`   Type: ${file.type}`, 'info');
+
+            // Show preview
+            const preview = document.getElementById('preview');
+            preview.src = URL.createObjectURL(file);
+            preview.style.display = 'block';
+
+            // Store file
+            selectedFile = file;
+            selectedBlob = await file.arrayBuffer().then(buffer => new Blob([buffer], { type: file.type }));
+
+            // Enable upload button
+            document.getElementById('uploadBtn').disabled = false;
+            log('✅ Ready to upload!', 'success');
+        });
+
+        async function uploadImage() {
+            if (!selectedFile) {
+                log('❌ No file selected!', 'error');
+                return;
+            }
+
+            log('🚀 Starting upload...', 'info');
+
+            try {
+                // Create FormData
+                const formData = new FormData();
+                
+                // Method 1: Direct file object
+                formData.append('image', selectedFile);
+                log(`✅ FormData created with file: ${selectedFile.name}`, 'success');
+
+                // Get mock JWT token (you may need a real one)
+                const token = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NzJhYjEyM2RlZjQ1Njc4OTBhYmMxMjMiLCJpYXQiOjE2OTg4NzY1NDMsImV4cCI6MTY5OTQ4MTM0M30.abc123def456';
+
+                log('📤 Sending POST to http://localhost:4000/api/plant/analyze', 'info');
+                
+                const response = await fetch('http://localhost:4000/api/plant/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': token,
+                    },
+                    body: formData
+                });
+
+                log(`📥 Response status: ${response.status} ${response.statusText}`, 
+                    response.ok ? 'success' : 'error');
+
+                const data = await response.json();
+                log(`📊 Response data: ${JSON.stringify(data, null, 2)}`, 
+                    data.success ? 'success' : 'error');
+
+                if (data.success) {
+                    log('🎉 SUCCESS! Analysis completed!', 'success');
+                    log(`   Crop: ${data.analysis.crop}`, 'info');
+                    log(`   Disease: ${data.analysis.disease}`, 'info');
+                    log(`   Confidence: ${Math.round(data.analysis.confidence * 100)}%`, 'info');
+                } else {
+                    log(`❌ FAILED: ${data.error}`, 'error');
+                }
+
+            } catch (error) {
+                log(`❌ ERROR: ${error.message}`, 'error');
+                log(`   Stack: ${error.stack}`, 'error');
+            }
+        }
+
+        // Initialize
+        log('🟢 Test page loaded', 'success');
+        log('👉 Click "Select Image" to start', 'info');
+    </script>
+</body>
+</html>

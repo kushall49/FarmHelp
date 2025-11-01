@@ -28,7 +28,16 @@ const upload = multer({ storage });
 // POST /api/plant/analyze - Upload and analyze plant image
 router.post('/analyze', authMiddleware, upload.single('image'), async (req, res) => {
   try {
+    console.log('[PLANT] === NEW ANALYZE REQUEST ===');
+    console.log('[PLANT] Content-Type:', req.headers['content-type']);
+    console.log('[PLANT] Body keys:', Object.keys(req.body));
+    console.log('[PLANT] File received:', req.file ? 'YES' : 'NO');
+    console.log('[PLANT] User:', req.user ? req.user.id : 'NO USER');
+    
     if (!req.file) {
+      console.log('[PLANT] ❌ ERROR: No file in request');
+      console.log('[PLANT] Full request body:', req.body);
+      console.log('[PLANT] Headers:', JSON.stringify(req.headers, null, 2));
       return res.status(400).json({ success: false, error: 'No image file provided' });
     }
 
@@ -37,6 +46,8 @@ router.post('/analyze', authMiddleware, upload.single('image'), async (req, res)
 
     // Call model service
     const modelResult = await callModelService(filePath);
+
+    console.log('[PLANT] Model result:', modelResult);
 
     // Save analysis to database
     const analysis = await Analysis.create({
@@ -53,11 +64,19 @@ router.post('/analyze', authMiddleware, upload.single('image'), async (req, res)
       success: true,
       analysis: {
         id: analysis._id,
-        prediction: analysis.prediction,
-        confidence: analysis.confidence,
-        modelVersion: analysis.modelVersion,
+        prediction: modelResult.prediction,
+        crop: modelResult.crop,
+        disease: modelResult.prediction,
+        confidence: modelResult.confidence,
+        confidence_percentage: modelResult.confidence_percentage,
+        modelVersion: modelResult.model_version,
         imagePath: analysis.imagePath,
-        createdAt: analysis.createdAt
+        createdAt: analysis.createdAt,
+        // Include detailed predictions
+        predictions: modelResult.predictions || [],
+        // Include recommendations and fertilizers from Flask
+        recommendation: modelResult.recommendation || 'No recommendations available',
+        fertilizers: modelResult.fertilizers || []
       }
     });
   } catch (error) {

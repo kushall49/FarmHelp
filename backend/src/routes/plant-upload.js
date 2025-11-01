@@ -9,7 +9,14 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Upload plant image and analyze
 router.post('/upload-plant', upload.single('image'), async (req, res) => {
   try {
+    console.log('[PLANT-UPLOAD] === NEW REQUEST ===');
+    console.log('[PLANT-UPLOAD] Headers:', req.headers);
+    console.log('[PLANT-UPLOAD] Body keys:', Object.keys(req.body));
+    console.log('[PLANT-UPLOAD] File received:', req.file ? 'YES' : 'NO');
+    
     if (!req.file) {
+      console.log('[PLANT-UPLOAD] ❌ ERROR: No file in request');
+      console.log('[PLANT-UPLOAD] Request body:', req.body);
       return res.status(400).json({ error: 'No image uploaded' });
     }
     
