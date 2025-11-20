@@ -105,6 +105,21 @@ const plantRoutes = require('./routes/plant');
 app.use('/api/plant', plantUploadRoutes);  // Handles /upload-plant
 app.use('/api/plant', plantRoutes);        // Handles /analyze and /last
 
+// Crops route - Returns list of supported crops
+app.get('/api/crops', (req, res) => {
+  const crops = [
+    { id: '1', name: 'Wheat', icon: '🌾' },
+    { id: '2', name: 'Rice', icon: '🌾' },
+    { id: '3', name: 'Corn', icon: '🌽' },
+    { id: '4', name: 'Tomato', icon: '🍅' },
+    { id: '5', name: 'Potato', icon: '🥔' },
+    { id: '6', name: 'Cotton', icon: '☁️' },
+    { id: '7', name: 'Sugarcane', icon: '🎋' },
+    { id: '8', name: 'Soybean', icon: '🫘' }
+  ];
+  res.json({ success: true, crops });
+});
+
 // Chatbot route - AI farming assistant
 app.post('/api/chatbot', async (req, res) => {
   try {
