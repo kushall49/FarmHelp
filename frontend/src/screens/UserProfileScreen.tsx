@@ -4,10 +4,13 @@ import { Text, Card, Button, ActivityIndicator, Chip, Divider } from 'react-nati
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeGoBack } from '../navigation/AppNavigator';
 
 const API_URL = 'http://localhost:4000';
 
 export default function UserProfileScreen() {
+  // ✅ NAVIGATION FIX: Use safe navigation with deep link fallback
+  const handleGoBack = useSafeGoBack();
   const [user, setUser] = useState<any>(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);

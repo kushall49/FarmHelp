@@ -3,8 +3,11 @@ import { View, ScrollView, StyleSheet, Alert } from 'react-native';
 import { Text, TextInput, Button, Surface, IconButton } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import api from '../services/api';
+import { useSafeGoBack } from '../navigation/AppNavigator';
 
 export default function RateProviderScreen({ route, navigation }: any) {
+  // ✅ NAVIGATION FIX: Use safe navigation with deep link fallback
+  const handleGoBack = useSafeGoBack();
   const { providerId } = route.params;
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');

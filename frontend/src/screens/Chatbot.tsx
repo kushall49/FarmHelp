@@ -1,9 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { TextInput, Button, Text, Card, Surface, ActivityIndicator, IconButton } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
 import api from '../services/api';
+import { useSafeGoBack } from '../navigation/AppNavigator';
 
 export default function Chatbot() {
+  // ✅ NAVIGATION FIX: Use safe navigation with deep link fallback
+  const navigation = useNavigation();
+  const handleGoBack = useSafeGoBack();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<any[]>([
     { from: 'bot', text: '👋 Hello! I\'m FarmBot, your AI farming assistant. Ask me about crops, pests, soil, weather, or any farming questions!' }

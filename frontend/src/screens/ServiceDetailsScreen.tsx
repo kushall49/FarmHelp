@@ -3,8 +3,11 @@ import { View, ScrollView, StyleSheet, Image, Linking, Alert } from 'react-nativ
 import { Text, Button, ActivityIndicator, Surface, IconButton, Chip } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import api from '../services/api';
+import { useSafeGoBack } from '../navigation/AppNavigator';
 
 export default function ServiceDetailsScreen({ route, navigation }: any) {
+  // ✅ NAVIGATION FIX: Use safe navigation with deep link fallback
+  const handleGoBack = useSafeGoBack();
   const { serviceId } = route.params;
   const [service, setService] = useState<any>(null);
   const [loading, setLoading] = useState(true);

@@ -48,6 +48,7 @@ export default {
   login: (data: any) => api.post('/auth/login', data),
   uploadPlant: (formData: any) => api.post('/plant/upload-plant', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getCrops: (params: any) => api.get('/crops', { params }),
+  getLocationBasedCrops: (params: { lat: number; long: number }) => api.get('/crops/location', { params }),
   chatbot: (message: string) => api.post('/chatbot', { message }),
   
   // Services Marketplace APIs

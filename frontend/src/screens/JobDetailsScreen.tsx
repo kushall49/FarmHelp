@@ -3,8 +3,11 @@ import { View, ScrollView, StyleSheet, Linking, Alert } from 'react-native';
 import { Text, Button, ActivityIndicator, Surface, IconButton, Chip } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import api from '../services/api';
+import { useSafeGoBack } from '../navigation/AppNavigator';
 
 export default function JobDetailsScreen({ route, navigation }: any) {
+  // ✅ NAVIGATION FIX: Use safe navigation with deep link fallback
+  const handleGoBack = useSafeGoBack();
   const { jobId } = route.params;
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);

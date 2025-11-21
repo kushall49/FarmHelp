@@ -4,10 +4,13 @@ import { Text, Card, TextInput, Button, ActivityIndicator, Divider } from 'react
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useSafeGoBack } from '../navigation/AppNavigator';
 
 const API_URL = 'http://localhost:4000';
 
 export default function PostDetailScreen() {
+  // ✅ NAVIGATION FIX: Use safe navigation with deep link fallback
+  const handleGoBack = useSafeGoBack();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');

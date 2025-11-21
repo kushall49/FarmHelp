@@ -50,8 +50,8 @@ export default function SignupScreen({ navigation }: any) {
       await AsyncStorage.setItem('username', data.user.username || data.user.displayName || 'User');
       await AsyncStorage.setItem('email', data.user.email);
 
-      console.log('Signup successful, navigating to Home');
-      navigation.replace('Home');
+      console.log('Signup successful, navigating to MainTabs');
+      navigation.replace('MainTabs');
     } catch (err: any) {
       console.error('Signup error:', err);
       setError(err.message || 'Signup failed');
@@ -61,7 +61,7 @@ export default function SignupScreen({ navigation }: any) {
   }
 
   function skipLogin() {
-    navigation.replace('Home');
+    navigation.replace('MainTabs');
   }
 
   return (

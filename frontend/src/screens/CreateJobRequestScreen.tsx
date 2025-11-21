@@ -16,6 +16,7 @@ import {
 } from 'react-native-paper';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import api from '../services/api';
+import { useSafeGoBack } from '../navigation/AppNavigator';
 
 const SERVICE_TYPES = [
   'Tractor', 'Harvester', 'Ploughing', 'Seeding', 'Irrigation Setup',

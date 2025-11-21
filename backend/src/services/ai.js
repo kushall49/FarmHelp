@@ -12,83 +12,166 @@ const AIService = {
   /**
    * Analyze plant image using Flask ML service
    * @param {Buffer} buffer - Image buffer
+   * @param {string} mimeType - MIME type of the image (e.g., 'image/jpeg', 'image/png')
    * @returns {Object} Analysis result
    */
-  async analyzePlant(buffer) {
-    try {
-      console.log('[AI-SERVICE] Creating form data for Flask ML service...');
-      console.log('[AI-SERVICE] Buffer size:', buffer.length, 'bytes');
-      
-      // Create form data with image file
-      const formData = new FormData();
-      // FormData needs a stream or buffer with proper options
-      formData.append('file', buffer, {
-        filename: 'plant_image.jpg',
-        contentType: 'image/jpeg',
-        knownLength: buffer.length
-      });
-      formData.append('return_gradcam', 'true');
-      formData.append('top_k', '3');
+  async analyzePlant(buffer, mimeType = 'image/jpeg') {
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 1000; // 1 second
+    let lastError = null;
 
-      console.log(`[AI-SERVICE] Calling Flask ML service at ${FLASK_ML_SERVICE_URL}/analyze...`);
-      console.log('[AI-SERVICE] Form headers:', formData.getHeaders());
-      
-      // Call Flask ML service
-      const response = await axios.post(`${FLASK_ML_SERVICE_URL}/analyze`, formData, {
-        headers: {
-          ...formData.getHeaders()
-        },
-        timeout: 30000, // 30 second timeout
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity
-      });
+    console.log('[AI-SERVICE] === STARTING PLANT ANALYSIS ===');
+    console.log('[AI-SERVICE] Timestamp:', new Date().toISOString());
+    console.log('[AI-SERVICE] Buffer size:', buffer.length, 'bytes (', (buffer.length / 1024 / 1024).toFixed(2), 'MB)');
+    console.log('[AI-SERVICE] MIME type:', mimeType);
+    console.log('[AI-SERVICE] Max retries:', MAX_RETRIES);
 
-      console.log('[AI-SERVICE] Flask response status:', response.status);
-      console.log('[AI-SERVICE] Flask response success:', response.data.success);
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        console.log(`[AI-SERVICE] === ATTEMPT ${attempt}/${MAX_RETRIES} ===`);
+        
+        // Create form data with image file
+        const formData = new FormData();
+        
+        // PRODUCTION: Use actual MIME type from request
+        const contentType = mimeType || 'image/jpeg';
+        const extension = contentType.split('/')[1] || 'jpg';
+        const filename = `plant_image.${extension}`;
+        
+        console.log('[AI-SERVICE] Creating FormData with:');
+        console.log('  - Filename:', filename);
+        console.log('  - Content-Type:', contentType);
+        console.log('  - Buffer length:', buffer.length);
+        
+        formData.append('file', buffer, {
+          filename: filename,
+          contentType: contentType,
+          knownLength: buffer.length
+        });
+        formData.append('return_gradcam', 'true');
+        formData.append('top_k', '3');
 
-      // Return the analysis result
-      if (response.data && response.data.success) {
-        console.log('[AI-SERVICE] ✅ Analysis successful');
-        console.log('[AI-SERVICE] Crop:', response.data.crop, 'Disease:', response.data.disease);
-        return {
-          crop: response.data.crop,
-          disease: response.data.disease,
-          confidence: response.data.confidence,
-          confidence_percentage: response.data.confidence_percentage,
-          predictions: response.data.predictions,
-          recommendation: response.data.recommendation,
-          recommendations: response.data.recommendations,
-          fertilizers: response.data.fertilizers,
-          gradcam: response.data.gradcam,
-          processing_time_ms: response.data.total_processing_time_ms
-        };
-      } else {
-        console.error('[AI-SERVICE] ML service returned unsuccessful response');
-        throw new Error('ML service returned unsuccessful response');
+        console.log(`[AI-SERVICE] Calling Flask ML service at ${FLASK_ML_SERVICE_URL}/analyze...`);
+        console.log('[AI-SERVICE] Request timeout: 30s');
+        
+        const requestStartTime = Date.now();
+        
+        // Call Flask ML service
+        const response = await axios.post(`${FLASK_ML_SERVICE_URL}/analyze`, formData, {
+          headers: {
+            ...formData.getHeaders()
+          },
+          timeout: 30000, // 30 second timeout
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+          validateStatus: (status) => status < 600 // Don't throw on 4xx/5xx
+        });
+
+        const requestTime = Date.now() - requestStartTime;
+        console.log('[AI-SERVICE] ✅ Flask responded in', requestTime, 'ms');
+        console.log('[AI-SERVICE] Response status:', response.status);
+        console.log('[AI-SERVICE] Response headers:', response.headers);
+
+        // PRODUCTION: Validate response is JSON
+        const responseContentType = response.headers['content-type'] || '';
+        if (!responseContentType.includes('application/json')) {
+          console.error('[AI-SERVICE] ❌ Non-JSON response received. Content-Type:', responseContentType);
+          console.error('[AI-SERVICE] Response data preview:', String(response.data).substring(0, 200));
+          throw new Error(`ML service returned non-JSON response (Content-Type: ${responseContentType})`);
+        }
+
+        // PRODUCTION: Handle non-2xx status codes
+        if (response.status !== 200) {
+          console.error('[AI-SERVICE] ❌ Non-200 status code:', response.status);
+          console.error('[AI-SERVICE] Error response:', response.data);
+          
+          const errorMessage = response.data?.error || `ML service returned status ${response.status}`;
+          throw new Error(errorMessage);
+        }
+
+        // PRODUCTION: Validate response structure
+        if (!response.data || typeof response.data !== 'object') {
+          console.error('[AI-SERVICE] ❌ Invalid response structure');
+          throw new Error('ML service returned invalid data structure');
+        }
+
+        // Return the analysis result
+        if (response.data.success) {
+          console.log('[AI-SERVICE] ✅ Analysis successful');
+          console.log('[AI-SERVICE] Crop:', response.data.crop);
+          console.log('[AI-SERVICE] Disease:', response.data.disease);
+          console.log('[AI-SERVICE] Confidence:', response.data.confidence_percentage);
+          console.log('[AI-SERVICE] === ANALYSIS COMPLETE ===');
+          
+          return {
+            success: true,
+            crop: response.data.crop,
+            disease: response.data.disease,
+            confidence: response.data.confidence,
+            confidence_percentage: response.data.confidence_percentage,
+            predictions: response.data.predictions || [],
+            recommendation: response.data.recommendation,
+            recommendations: response.data.recommendations,
+            fertilizers: response.data.fertilizers,
+            gradcam: response.data.gradcam,
+            processing_time_ms: response.data.total_processing_time_ms || requestTime
+          };
+        } else {
+          console.error('[AI-SERVICE] ❌ ML service returned success=false');
+          console.error('[AI-SERVICE] Error:', response.data.error);
+          throw new Error(response.data.error || 'ML service returned unsuccessful response');
+        }
+        
+      } catch (error) {
+        lastError = error;
+        console.error(`[AI-SERVICE] ❌ Attempt ${attempt} failed:`, error.message);
+        
+        if (error.response) {
+          console.error('[AI-SERVICE] Response status:', error.response.status);
+          console.error('[AI-SERVICE] Response data:', JSON.stringify(error.response.data));
+        }
+        if (error.code) {
+          console.error('[AI-SERVICE] Error code:', error.code);
+        }
+        
+        // PRODUCTION: Check if error is retryable
+        const isRetryable = 
+          error.code === 'ECONNREFUSED' ||
+          error.code === 'ETIMEDOUT' ||
+          error.code === 'ECONNRESET' ||
+          (error.response && error.response.status >= 500);
+        
+        if (!isRetryable || attempt === MAX_RETRIES) {
+          console.error('[AI-SERVICE] ❌ Not retryable or max retries reached');
+          break;
+        }
+        
+        // Wait before retrying (exponential backoff)
+        const delay = RETRY_DELAY * Math.pow(2, attempt - 1);
+        console.log(`[AI-SERVICE] Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
-    } catch (error) {
-      console.error('[AI-SERVICE] ❌ Error calling Flask ML service:', error.message);
-      if (error.response) {
-        console.error('[AI-SERVICE] Response status:', error.response.status);
-        console.error('[AI-SERVICE] Response data:', JSON.stringify(error.response.data));
-      }
-      if (error.code) {
-        console.error('[AI-SERVICE] Error code:', error.code);
-      }
-      
-      // Return fallback response if ML service fails
-      return {
-        crop: 'Unknown',
-        disease: 'Service Unavailable',
-        confidence: 0.0,
-        confidence_percentage: '0.00%',
-        predictions: [],
-        recommendation: 'Plant disease detection service is currently unavailable. Please try again later.',
-        recommendations: {},
-        fertilizers: [],
-        error: error.message
-      };
     }
+    
+    // PRODUCTION: All retries failed, return standardized error response
+    console.error('[AI-SERVICE] ❌ All retry attempts exhausted');
+    console.error('[AI-SERVICE] Final error:', lastError?.message);
+    
+    return {
+      success: false,
+      error: lastError?.message || 'ML service unavailable',
+      error_code: lastError?.code || 'ML_SERVICE_ERROR',
+      layer: 'ml_service',
+      timestamp: Date.now(),
+      crop: 'Unknown',
+      disease: 'Service Unavailable',
+      confidence: 0.0,
+      confidence_percentage: '0.00%',
+      predictions: [],
+      recommendation: 'Plant disease detection service is currently unavailable. Please ensure the ML service is running and try again.',
+      recommendations: {},
+      fertilizers: []
+    };
   },
 
   async chat(message) {

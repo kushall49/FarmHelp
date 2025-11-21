@@ -195,6 +195,15 @@ export default function HomeScreen({ navigation }: any) {
       icon: '🌾',
       description: 'Get personalized crop suggestions based on soil, season, and climate data'
     },
+    // Temporarily commented out due to package compatibility issues
+    // { 
+    //   title: 'Location-Based Crops', 
+    //   subtitle: 'GPS + Weather intelligence', 
+    //   screen: 'LocationCropRecommendation', 
+    //   color: '#00BCD4',
+    //   icon: '📍',
+    //   description: 'Get real-time crop recommendations based on your exact location and weather'
+    // },
     { 
       title: 'Services Marketplace', 
       subtitle: 'Find services & equipment', 

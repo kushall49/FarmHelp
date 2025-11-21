@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text, TextInput, Button, Card, Surface, Chip, ActivityIndicator } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
 import api from '../services/api';
+import { useSafeGoBack } from '../navigation/AppNavigator';
 
 export default function CropRecommendation() {
+  // ✅ NAVIGATION FIX: Use safe navigation with deep link fallback
+  const navigation = useNavigation();
+  const handleGoBack = useSafeGoBack();
   const [soil, setSoil] = useState('');
   const [season, setSeason] = useState('');
   const [temp, setTemp] = useState('');
@@ -124,22 +129,46 @@ export default function CropRecommendation() {
 
       {!loading && results.length > 0 && (
         <>
-          <Text variant="titleLarge" style={styles.resultsTitle}>
-            ✅ Found {results.length} Recommended Crop{results.length > 1 ? 's' : ''}
-          </Text>
+          <Surface style={styles.resultsHeader}>
+            <Text variant="titleLarge" style={styles.resultsTitle}>
+              ✅ Top {results.length} Recommended Crops
+            </Text>
+            <Text style={styles.resultsSubtitle}>
+              Based on your soil, season, and temperature
+            </Text>
+          </Surface>
+          
           {results.map((crop: any, index: number) => (
             <Card key={crop._id || index} style={styles.cropCard}>
               <Card.Content>
                 <View style={styles.cropHeader}>
-                  <Text variant="titleLarge" style={styles.cropName}>🌿 {crop.name}</Text>
-                  <Surface style={[styles.badge, { backgroundColor: '#E8F5E9' }]}>
-                    <Text style={styles.badgeText}>#{index + 1}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text variant="titleLarge" style={styles.cropName}>🌿 {crop.name}</Text>
+                    {crop.score && (
+                      <Text style={styles.scoreText}>
+                        Match Score: {Math.round(crop.score)}/100
+                      </Text>
+                    )}
+                  </View>
+                  <Surface style={[styles.badge, { backgroundColor: index < 3 ? '#E8F5E9' : '#F3F4F6' }]}>
+                    <Text style={[styles.badgeText, { color: index < 3 ? '#4CAF50' : '#6B7280' }]}>
+                      #{crop.rank || index + 1}
+                    </Text>
                   </Surface>
                 </View>
 
+                {crop.reasons && crop.reasons.length > 0 && (
+                  <View style={styles.reasonsSection}>
+                    <Text style={styles.reasonsTitle}>💡 Why this crop:</Text>
+                    {crop.reasons.map((reason: string, idx: number) => (
+                      <Text key={idx} style={styles.reasonText}>• {reason}</Text>
+                    ))}
+                  </View>
+                )}
+
                 <View style={styles.detailRow}>
                   <Text style={styles.label}>🌍 Suitable Soils:</Text>
-                  <Text style={styles.value}>{crop.suitableSoils?.join(', ') || crop.soilTypes?.join(', ') || 'N/A'}</Text>
+                  <Text style={styles.value}>{crop.suitableSoils?.join(', ') || 'N/A'}</Text>
                 </View>
 
                 <View style={styles.detailRow}>
@@ -152,6 +181,13 @@ export default function CropRecommendation() {
                   <Text style={styles.value}>{crop.minTemp}°C - {crop.maxTemp}°C</Text>
                 </View>
 
+                {crop.minRainfall && crop.maxRainfall && (
+                  <View style={styles.detailRow}>
+                    <Text style={styles.label}>🌧️ Rainfall Need:</Text>
+                    <Text style={styles.value}>{crop.minRainfall} - {crop.maxRainfall} mm</Text>
+                  </View>
+                )}
+
                 {crop.waterRequirement && (
                   <View style={styles.detailRow}>
                     <Text style={styles.label}>💧 Water Need:</Text>
@@ -163,6 +199,19 @@ export default function CropRecommendation() {
                   <View style={styles.detailRow}>
                     <Text style={styles.label}>📈 Yield Potential:</Text>
                     <Text style={styles.value}>{crop.yieldPotential}</Text>
+                  </View>
+                )}
+
+                {crop.marketDemand && (
+                  <View style={styles.detailRow}>
+                    <Text style={styles.label}>💰 Market Demand:</Text>
+                    <Text style={[styles.value, { 
+                      color: crop.marketDemand === 'High' ? '#10B981' : 
+                             crop.marketDemand === 'Medium' ? '#F59E0B' : '#6B7280',
+                      fontWeight: 'bold'
+                    }]}>
+                      {crop.marketDemand}
+                    </Text>
                   </View>
                 )}
               </Card.Content>
@@ -198,12 +247,32 @@ const styles = StyleSheet.create({
   button: { marginTop: 8 },
   loadingContainer: { alignItems: 'center', padding: 40 },
   loadingText: { marginTop: 16, fontSize: 16, color: '#64748B' },
-  resultsTitle: { fontWeight: 'bold', marginHorizontal: 16, marginBottom: 16, color: '#1E293B' },
+  resultsHeader: { 
+    marginHorizontal: 16, 
+    marginBottom: 16, 
+    padding: 16, 
+    borderRadius: 12, 
+    backgroundColor: '#fff',
+    elevation: 2 
+  },
+  resultsTitle: { fontWeight: 'bold', color: '#1E293B', marginBottom: 4 },
+  resultsSubtitle: { fontSize: 14, color: '#64748B' },
   cropCard: { marginHorizontal: 16, marginBottom: 12, borderRadius: 16, elevation: 2, backgroundColor: '#fff' },
-  cropHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  cropName: { fontWeight: 'bold', color: '#1E293B', flex: 1 },
+  cropHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  cropName: { fontWeight: 'bold', color: '#1E293B', marginBottom: 4 },
+  scoreText: { fontSize: 14, color: '#4CAF50', fontWeight: '600' },
   badge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, elevation: 0 },
-  badgeText: { fontSize: 12, color: '#4CAF50', fontWeight: 'bold' },
+  badgeText: { fontSize: 12, fontWeight: 'bold' },
+  reasonsSection: { 
+    backgroundColor: '#F0F9FF', 
+    padding: 12, 
+    borderRadius: 8, 
+    marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#3B82F6'
+  },
+  reasonsTitle: { fontSize: 14, fontWeight: 'bold', color: '#1E40AF', marginBottom: 6 },
+  reasonText: { fontSize: 13, color: '#1E3A8A', marginBottom: 3, lineHeight: 18 },
   detailRow: { flexDirection: 'row', marginBottom: 8, alignItems: 'flex-start' },
   label: { fontSize: 14, fontWeight: '600', color: '#1E293B', width: 140 },
   value: { fontSize: 14, color: '#475569', flex: 1 },

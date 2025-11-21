@@ -25,6 +25,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import api from '../services/api';
 import ServiceCard from '../components/ServiceCard';
 import JobCard from '../components/JobCard';
+import { useSafeGoBack } from '../navigation/AppNavigator';
 
 const { width } = Dimensions.get('window');
 

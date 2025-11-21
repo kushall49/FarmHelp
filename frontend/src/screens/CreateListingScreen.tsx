@@ -20,6 +20,7 @@ import {
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'expo-image-picker';
 import api from '../services/api';
+import { useSafeGoBack } from '../navigation/AppNavigator';
 
 const SERVICE_TYPES = [
   'Tractor',

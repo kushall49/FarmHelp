@@ -2,7 +2,11 @@ import React, { useState, useRef } from 'react';
 import { View, Image, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
 import { Button, Text, ActivityIndicator, Card, Surface, Chip, Snackbar } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
+import { useNavigation } from '@react-navigation/native';
 import api from '../services/api';
+
+// Import safe navigation hook
+import { useSafeGoBack } from '../navigation/AppNavigator';
 
 // TypeScript interfaces
 interface PickedImage {
@@ -33,6 +37,9 @@ interface ApiResponse {
 }
 
 export default function PlantAnalyzer(): JSX.Element {
+  // ✅ NAVIGATION FIX: Use safe navigation with deep link fallback
+  const navigation = useNavigation();
+  const handleGoBack = useSafeGoBack();
   const [image, setImage] = useState<PickedImage | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
@@ -76,16 +83,8 @@ export default function PlantAnalyzer(): JSX.Element {
   }
 
   async function analyze(): Promise<void> {
-    // 🚨 CRITICAL: Prevent default browser behavior on web
-    if (Platform.OS === 'web') {
-      console.log('[ANALYZER] 🔒 WEB PLATFORM: Preventing all default navigation behaviors');
-      // Prevent any form submission or page reload
-      if (typeof window !== 'undefined') {
-        window.history.pushState(null, '', window.location.href);
-        console.log('[ANALYZER] 🔒 Locked browser history to current page');
-      }
-    }
-
+    // ✅ NAVIGATION FIX: Removed window.history hack - proper navigation now handled by AppNavigator
+    
     if (!image) {
       console.warn('[ANALYZER] No image selected');
       return;
@@ -101,79 +100,114 @@ export default function PlantAnalyzer(): JSX.Element {
     try {
       const formData = new FormData();
       const filename = image.uri.split('/').pop() || 'plant.jpg';
-      const fileType = filename.split('.').pop() || 'jpg';
-      const mimeType = `image/${fileType === 'jpg' ? 'jpeg' : fileType}`;
+      const fileType = filename.split('.').pop()?.toLowerCase() || 'jpg';
+      
+      // CRITICAL FIX: Always use 'jpeg' MIME type (standardized)
+      const mimeType = fileType === 'png' ? 'image/png' : 'image/jpeg';
 
-      // ✅ CRITICAL FIX: Platform-specific FormData handling
+      console.log('[ANALYZER] File details:', {
+        filename,
+        fileType,
+        mimeType,
+        platform: Platform.OS
+      });
+
+      // ✅ PRODUCTION FIX: Platform-specific FormData handling
       if (Platform.OS === 'web') {
         console.log('[ANALYZER] Web platform detected - converting to File/Blob');
         
-        // On web, ImagePicker returns blob: URIs that need to be fetched
-        const response = await fetch(image.uri);
-        const blob = await response.blob();
-        
-        console.log('[ANALYZER] Blob created:', {
-          size: blob.size,
-          type: blob.type
-        });
+        try {
+          // On web, ImagePicker returns blob: URIs that need to be fetched
+          const response = await fetch(image.uri);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.statusText}`);
+          }
+          
+          const blob = await response.blob();
+          
+          console.log('[ANALYZER] Blob created:', {
+            size: blob.size,
+            type: blob.type
+          });
 
-        // Create a proper File object (extends Blob with name property)
-        const file = new File([blob], filename, { type: mimeType });
-        
-        console.log('[ANALYZER] File created:', {
-          name: file.name,
-          size: file.size,
-          type: file.type
-        });
+          // CRITICAL: Create proper File object with JPEG MIME
+          const file = new File([blob], filename, { type: mimeType });
+          
+          console.log('[ANALYZER] File created:', {
+            name: file.name,
+            size: file.size,
+            type: file.type
+          });
 
-        // Append with 3 parameters (data, fieldName, filename) for web compatibility
-        formData.append('image', file, filename);
-        console.log('[ANALYZER] ✅ Web: File appended to FormData');
+          // PRODUCTION: Append with explicit filename
+          formData.append('image', file, filename);
+          console.log('[ANALYZER] ✅ Web: File appended to FormData');
+          
+        } catch (fetchError: any) {
+          console.error('[ANALYZER] ❌ Failed to convert image:', fetchError);
+          throw new Error(`Image conversion failed: ${fetchError.message}`);
+        }
         
       } else {
         console.log('[ANALYZER] Mobile platform detected - using URI format');
         
-        // On React Native (iOS/Android), use the special object format
+        // PRODUCTION: Mobile FormData with proper MIME type
         // @ts-ignore - React Native FormData accepts this format
         formData.append('image', {
           uri: image.uri,
           name: filename,
-          type: mimeType
+          type: mimeType  // Always valid MIME type
         });
         
-        console.log('[ANALYZER] ✅ Mobile: URI object appended to FormData');
+        console.log('[ANALYZER] ✅ Mobile: URI object appended with MIME:', mimeType);
       }
 
       console.log('[ANALYZER] Sending request to API...');
       const res = await api.uploadPlant(formData);
       
       console.log('[ANALYZER] ✅ Raw API Response:', res);
-      console.log('[ANALYZER] ✅ Response Data:', res.data);
-      console.log('[ANALYZER] ✅ Response Data Type:', typeof res.data);
-      console.log('[ANALYZER] Full response structure:', JSON.stringify(res.data, null, 2));
+      console.log('[ANALYZER] Response Status:', res.status);
+      console.log('[ANALYZER] Response Data:', res.data);
       
-      // Handle both direct result and nested result
-      const analysisResult = res.data.result || res.data;
+      // PRODUCTION: Safe response parsing with fallback
+      let analysisResult: AnalysisResult;
+      
+      if (!res.data) {
+        throw new Error('Empty response from server');
+      }
+      
+      // Handle nested result structure
+      if (res.data.result) {
+        analysisResult = res.data.result;
+      } else if (res.data.success !== false) {
+        analysisResult = res.data;
+      } else {
+        throw new Error(res.data.error || 'Analysis failed');
+      }
+      
       console.log('[ANALYZER] Extracted Analysis Result:', analysisResult);
-      console.log('[ANALYZER] Result has disease?', !!analysisResult?.disease);
-      console.log('[ANALYZER] Result has crop?', !!analysisResult?.crop);
-      console.log('[ANALYZER] Result has confidence?', analysisResult?.confidence);
-      console.log('[ANALYZER] Result has recommendations?', !!analysisResult?.recommendations);
-      console.log('[ANALYZER] Result has recommendation?', !!analysisResult?.recommendation);
+      console.log('[ANALYZER] Disease:', analysisResult?.disease || 'Unknown');
+      console.log('[ANALYZER] Confidence:', analysisResult?.confidence || analysisResult?.confidence_percentage);
       
-      // CRITICAL: Force inline display - NO navigation
-      console.log('[ANALYZER] 🔒 INLINE MODE: Preventing navigation');
-      console.log('[ANALYZER] 🔒 Disease:', analysisResult?.disease);
-      console.log('[ANALYZER] 🔒 Confidence:', analysisResult?.confidence_percentage || analysisResult?.confidence);
+      // PRODUCTION: Validate result structure
+      if (!analysisResult.disease && !analysisResult.crop) {
+        console.warn('[ANALYZER] ⚠️ Incomplete result structure, using fallback');
+        analysisResult = {
+          ...analysisResult,
+          disease: analysisResult.disease || 'Analysis Complete',
+          crop: analysisResult.crop || 'Unknown',
+          confidence_percentage: analysisResult.confidence_percentage || '0%',
+          recommendation: analysisResult.recommendation || 'No recommendations available'
+        };
+      }
       
-      // CRITICAL: Set result BEFORE showing alert
+      // CRITICAL: Set result BEFORE showing message
       setResult(analysisResult);
-      console.log('[ANALYZER] ✅ Result state updated');
+      console.log('[ANALYZER] ✅ Result state updated successfully');
       
       // Wait for React to process state update, then scroll and show success message
       setTimeout(() => {
         console.log('[ANALYZER] Auto-scrolling to results...');
-        console.log('[ANALYZER] 🔒 Current result:', !!analysisResult);
         
         // INLINE SCROLL - Multiple methods to guarantee visibility
         try {
@@ -206,14 +240,12 @@ export default function PlantAnalyzer(): JSX.Element {
             scrollViewRef.current?.scrollToEnd({ animated: true });
             console.log('[ANALYZER] ✅ Mobile ScrollView scrolled');
           }
-        } catch (scrollErr) {
+        } catch (scrollErr: any) {
           console.error('[ANALYZER] ❌ Scroll error:', scrollErr);
-          console.error('[ANALYZER] ❌ Error details:', scrollErr.message);
         }
         
-        // Show success message via Snackbar (NO window.alert!)
+        // Show success message via Snackbar
         setTimeout(() => {
-          console.log('[ANALYZER] Showing success message...');
           setSnackbarMessage('✅ Analysis complete! Results displayed below.');
           setSnackbarVisible(true);
         }, 500);
@@ -221,13 +253,37 @@ export default function PlantAnalyzer(): JSX.Element {
         
     } catch (err: any) {
       console.error('[ANALYZER] ❌ Error:', err);
+      console.error('[ANALYZER] Error message:', err.message);
       console.error('[ANALYZER] Error response:', err.response?.data);
+      console.error('[ANALYZER] Error status:', err.response?.status);
       
-      const errorMessage = err.response?.data?.error || 'Analysis failed. Please try again.';
+      // PRODUCTION: Safe error message extraction
+      let errorMessage = 'Analysis failed. Please try again.';
       
-      // Use Snackbar for errors too (NO window.alert!)
+      if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        } else if (err.response.data.error) {
+          errorMessage = err.response.data.error;
+        } else if (err.response.data.message) {
+          errorMessage = err.response.data.message;
+        }
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      // Show error via Snackbar
       setSnackbarMessage(`❌ ${errorMessage}`);
       setSnackbarVisible(true);
+      
+      // PRODUCTION: Set fallback result on error (prevent white screen)
+      setResult({
+        disease: 'Error',
+        crop: 'Unknown',
+        confidence_percentage: '0%',
+        recommendation: `Analysis failed: ${errorMessage}. Please try again with a different image.`,
+        predictions: []
+      });
         
     } finally { 
       setLoading(false); 

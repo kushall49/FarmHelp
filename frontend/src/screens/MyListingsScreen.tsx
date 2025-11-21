@@ -2,8 +2,12 @@ import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Title, Button, Surface, IconButton } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeGoBack } from '../navigation/AppNavigator';
 
 export default function MyListingsScreen({ navigation }: any) {
+  // ✅ NAVIGATION FIX: Use safe navigation with deep link fallback
+  const handleGoBack = useSafeGoBack();
+  
   return (
     <ScrollView style={styles.container}>
       {/* Header with Back Button */}
@@ -11,7 +15,7 @@ export default function MyListingsScreen({ navigation }: any) {
         <IconButton 
           icon="arrow-left" 
           size={24} 
-          onPress={() => navigation.goBack()}
+          onPress={handleGoBack}
         />
         <Text style={styles.headerTitle}>My Listings</Text>
         <View style={{ width: 40 }} />

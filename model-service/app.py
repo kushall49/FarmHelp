@@ -71,21 +71,35 @@ def log_response(response):
 
 @app.errorhandler(Exception)
 def handle_error(error):
-    """Global error handler"""
-    logger.error(f"Error: {str(error)}", exc_info=True)
+    """
+    Global error handler - PRODUCTION VERSION
+    Ensures ALL errors return JSON with proper Content-Type header
+    """
+    logger.error(f"[ERROR-HANDLER] Caught exception: {str(error)}", exc_info=True)
+    
+    # PRODUCTION: Build standardized error response
+    error_response = {
+        'success': False,
+        'error': str(error),
+        'error_code': 'SERVER_ERROR',
+        'layer': 'ml_service',
+        'timestamp': int(time.time() * 1000)
+    }
+    
+    status_code = 500
     
     if isinstance(error, HTTPException):
-        return jsonify({
-            'success': False,
-            'error': error.description,
-            'status_code': error.code
-        }), error.code
+        error_response['error'] = error.description
+        error_response['error_code'] = f'HTTP_{error.code}'
+        status_code = error.code
     
-    return jsonify({
-        'success': False,
-        'error': 'Internal server error',
-        'message': str(error)
-    }), 500
+    # PRODUCTION: Explicitly set Content-Type header
+    response = jsonify(error_response)
+    response.headers['Content-Type'] = 'application/json'
+    response.status_code = status_code
+    
+    logger.error(f"[ERROR-HANDLER] Returning JSON error response with status {status_code}")
+    return response
 
 
 @app.route('/', methods=['GET'])
@@ -135,7 +149,8 @@ def health():
 @app.route('/analyze', methods=['POST'])
 def analyze():
     """
-    Main endpoint for plant disease analysis
+    PRODUCTION: Main endpoint for plant disease analysis
+    Ensures JSON-only responses with explicit Content-Type headers
     
     Request body (JSON):
         {
@@ -161,38 +176,90 @@ def analyze():
             "processing_time_ms": 234.56
         }
     """
+    logger.info('[FLASK] === NEW ANALYZE REQUEST ===')
+    logger.info(f'[FLASK] Timestamp: {time.strftime("%Y-%m-%d %H:%M:%S")}')
+    logger.info(f'[FLASK] Content-Type: {request.content_type}')
+    logger.info(f'[FLASK] Remote IP: {request.remote_addr}')
+    
     try:
         start_time = time.time()
         
-        # Check if model is loaded
+        # PRODUCTION: Check if model is loaded
         if not model_loader.is_loaded():
-            return jsonify({
+            logger.error('[FLASK] ❌ Model not loaded')
+            response = jsonify({
                 'success': False,
-                'error': 'Model not loaded. Please check server logs.'
-            }), 503
+                'error': 'ML model not loaded. Please check server logs.',
+                'error_code': 'MODEL_NOT_LOADED',
+                'layer': 'ml_service',
+                'timestamp': int(time.time() * 1000)
+            })
+            response.headers['Content-Type'] = 'application/json'
+            response.status_code = 503
+            return response
         
         # Parse request
         image_array = None
         original_image = None
         return_gradcam = True
         top_k = 3
+        filename = 'unknown'
+        file_size = 0
         
-        # Check for file upload
+        # Check for file upload (multipart/form-data)
         if 'file' in request.files:
+            logger.info('[FLASK] Detected multipart/form-data request')
             file = request.files['file']
+            filename = file.filename
+            
             if file.filename == '':
-                return jsonify({
+                logger.error('[FLASK] ❌ Empty filename')
+                response = jsonify({
                     'success': False,
-                    'error': 'No file selected'
-                }), 400
+                    'error': 'No file selected',
+                    'error_code': 'NO_FILE_SELECTED',
+                    'layer': 'ml_service',
+                    'timestamp': int(time.time() * 1000)
+                })
+                response.headers['Content-Type'] = 'application/json'
+                response.status_code = 400
+                return response
+            
+            # Read file to get size
+            file_content = file.read()
+            file_size = len(file_content)
+            file.seek(0)  # Reset file pointer
+            
+            logger.info(f'[FLASK] File details:')
+            logger.info(f'  - Filename: {filename}')
+            logger.info(f'  - Size: {file_size} bytes ({file_size / 1024 / 1024:.2f} MB)')
+            logger.info(f'  - Content-Type: {file.content_type}')
             
             # Decode file
+            logger.info('[FLASK] Decoding image file...')
+            decode_start = time.time()
             original_image = preprocessor.decode_file(file)
+            decode_time = (time.time() - decode_start) * 1000
+            
             if original_image is None:
-                return jsonify({
+                logger.error('[FLASK] ❌ Failed to decode image file')
+                response = jsonify({
                     'success': False,
-                    'error': 'Failed to decode image file'
-                }), 400
+                    'error': 'Failed to decode image file. Ensure it is a valid JPEG, PNG, or WEBP image.',
+                    'error_code': 'DECODE_FAILED',
+                    'layer': 'ml_service',
+                    'timestamp': int(time.time() * 1000),
+                    'details': {
+                        'filename': filename,
+                        'size_bytes': file_size
+                    }
+                })
+                response.headers['Content-Type'] = 'application/json'
+                response.status_code = 400
+                return response
+            
+            logger.info(f'[FLASK] ✅ Image decoded in {decode_time:.2f}ms')
+            logger.info(f'[FLASK] Image shape: {original_image.shape}')
             
             # Get parameters from form data
             return_gradcam = request.form.get('return_gradcam', 'true').lower() == 'true'
@@ -200,76 +267,147 @@ def analyze():
         
         # Check for JSON body
         elif request.is_json:
+            logger.info('[FLASK] Detected JSON request')
             data = request.get_json()
             
             # Validate image data
             image_data = data.get('image')
             if not image_data:
-                return jsonify({
+                logger.error('[FLASK] ❌ Missing image field in JSON')
+                response = jsonify({
                     'success': False,
-                    'error': 'Missing required field: image'
-                }), 400
+                    'error': 'Missing required field: image',
+                    'error_code': 'MISSING_IMAGE',
+                    'layer': 'ml_service',
+                    'timestamp': int(time.time() * 1000)
+                })
+                response.headers['Content-Type'] = 'application/json'
+                response.status_code = 400
+                return response
+            
+            file_size = len(image_data)
+            logger.info(f'[FLASK] Base64 data length: {file_size} characters')
             
             is_valid, error_msg = validate_base64_image(image_data)
             if not is_valid:
-                return jsonify({
+                logger.error(f'[FLASK] ❌ Invalid base64 image: {error_msg}')
+                response = jsonify({
                     'success': False,
-                    'error': f'Invalid image data: {error_msg}'
-                }), 400
+                    'error': f'Invalid image data: {error_msg}',
+                    'error_code': 'INVALID_BASE64',
+                    'layer': 'ml_service',
+                    'timestamp': int(time.time() * 1000)
+                })
+                response.headers['Content-Type'] = 'application/json'
+                response.status_code = 400
+                return response
             
             # Decode base64 image
+            logger.info('[FLASK] Decoding base64 image...')
+            decode_start = time.time()
             original_image = preprocessor.decode_image(image_data)
+            decode_time = (time.time() - decode_start) * 1000
+            
             if original_image is None:
-                return jsonify({
+                logger.error('[FLASK] ❌ Failed to decode base64 image')
+                response = jsonify({
                     'success': False,
-                    'error': 'Failed to decode base64 image'
-                }), 400
+                    'error': 'Failed to decode base64 image',
+                    'error_code': 'BASE64_DECODE_FAILED',
+                    'layer': 'ml_service',
+                    'timestamp': int(time.time() * 1000)
+                })
+                response.headers['Content-Type'] = 'application/json'
+                response.status_code = 400
+                return response
+            
+            logger.info(f'[FLASK] ✅ Image decoded in {decode_time:.2f}ms')
+            logger.info(f'[FLASK] Image shape: {original_image.shape}')
             
             # Get parameters
             return_gradcam = data.get('return_gradcam', True)
             top_k = data.get('top_k', 3)
+            filename = 'base64_image'
         
         else:
-            return jsonify({
+            logger.error('[FLASK] ❌ Invalid request content type')
+            response = jsonify({
                 'success': False,
-                'error': 'Request must be JSON or multipart/form-data'
-            }), 400
+                'error': 'Request must be JSON or multipart/form-data',
+                'error_code': 'INVALID_CONTENT_TYPE',
+                'layer': 'ml_service',
+                'timestamp': int(time.time() * 1000),
+                'details': {
+                    'received_content_type': request.content_type
+                }
+            })
+            response.headers['Content-Type'] = 'application/json'
+            response.status_code = 400
+            return response
         
         # Validate top_k
         if not validate_top_k(top_k):
-            return jsonify({
+            logger.error(f'[FLASK] ❌ Invalid top_k value: {top_k}')
+            response = jsonify({
                 'success': False,
-                'error': 'Invalid top_k value (must be 1-10)'
-            }), 400
+                'error': 'Invalid top_k value (must be 1-10)',
+                'error_code': 'INVALID_TOP_K',
+                'layer': 'ml_service',
+                'timestamp': int(time.time() * 1000)
+            })
+            response.headers['Content-Type'] = 'application/json'
+            response.status_code = 400
+            return response
         
-        logger.info(f"Processing image: shape={original_image.shape}, gradcam={return_gradcam}, top_k={top_k}")
+        logger.info(f'[FLASK] Parameters: return_gradcam={return_gradcam}, top_k={top_k}')
+        
+        logger.info(f"[FLASK] Processing image: shape={original_image.shape}, gradcam={return_gradcam}, top_k={top_k}")
         
         # Preprocess image
+        logger.info('[FLASK] Preprocessing image...')
+        preprocess_start = time.time()
         preprocessed = preprocessor.preprocess(original_image, normalize_method='imagenet')
+        preprocess_time = (time.time() - preprocess_start) * 1000
+        logger.info(f'[FLASK] ✅ Preprocessing complete in {preprocess_time:.2f}ms')
         
         # Run prediction
+        logger.info('[FLASK] Running model inference...')
+        inference_start = time.time()
         global classifier
         prediction_result = classifier.predict(preprocessed, top_k=top_k)
+        inference_time = (time.time() - inference_start) * 1000
         
         if not prediction_result['success']:
-            return jsonify(prediction_result), 500
+            logger.error('[FLASK] ❌ Prediction failed')
+            response = jsonify(prediction_result)
+            response.headers['Content-Type'] = 'application/json'
+            response.status_code = 500
+            return response
+        
+        logger.info(f'[FLASK] ✅ Inference complete in {inference_time:.2f}ms')
+        logger.info(f'[FLASK] Predicted: {prediction_result["crop"]} - {prediction_result["disease"]}')
         
         # Generate GradCAM if requested
         gradcam_base64 = None
+        gradcam_time = 0
         if return_gradcam and Config.ENABLE_GRADCAM:
             try:
+                logger.info('[FLASK] Generating GradCAM...')
+                gradcam_start = time.time()
                 gradcam_base64 = gradcam.generate_and_overlay(
                     original_image=original_image,
                     preprocessed_image=preprocessed,
                     class_idx=prediction_result['class_id'],
                     alpha=0.4
                 )
+                gradcam_time = (time.time() - gradcam_start) * 1000
                 if gradcam_base64:
-                    logger.info("GradCAM generated successfully")
+                    logger.info(f"[FLASK] ✅ GradCAM generated in {gradcam_time:.2f}ms")
             except Exception as e:
-                logger.warning(f"GradCAM generation failed: {str(e)}")
+                logger.warning(f"[FLASK] ⚠️ GradCAM generation failed: {str(e)}")
         
         # Get treatment recommendations
+        logger.info('[FLASK] Fetching recommendations...')
         recommendations = recommendation_service.get_recommendation(
             crop=prediction_result['crop'],
             disease=prediction_result['disease'],
@@ -277,6 +415,7 @@ def analyze():
         )
         
         # Get fertilizer recommendations
+        logger.info('[FLASK] Fetching fertilizer recommendations...')
         fertilizers = fertilizer_recommender.get_recommendations(
             crop=prediction_result['crop'],
             disease=prediction_result['disease'],
@@ -284,31 +423,51 @@ def analyze():
         )
         
         # Format final response
-        response = classifier.format_response(
+        response_data = classifier.format_response(
             prediction_result=prediction_result,
             gradcam_base64=gradcam_base64,
             recommendations=recommendations
         )
         
         # Add fertilizer recommendations
-        response['fertilizers'] = fertilizers
+        response_data['fertilizers'] = fertilizers
         
-        # Add total processing time
+        # Add detailed timing information
         total_time = time.time() - start_time
-        response['total_processing_time_ms'] = round(total_time * 1000, 2)
+        response_data['total_processing_time_ms'] = round(total_time * 1000, 2)
+        response_data['timing_breakdown'] = {
+            'decode_ms': round(decode_time, 2) if 'decode_time' in locals() else 0,
+            'preprocess_ms': round(preprocess_time, 2),
+            'inference_ms': round(inference_time, 2),
+            'gradcam_ms': round(gradcam_time, 2),
+            'total_ms': round(total_time * 1000, 2)
+        }
         
-        logger.info(f"✅ Analysis complete: {response['crop']} - {response['disease']} " +
-                   f"({response['confidence_percentage']}) in {response['total_processing_time_ms']}ms")
+        logger.info(f"[FLASK] ✅ Analysis complete: {response_data['crop']} - {response_data['disease']} " +
+                   f"({response_data['confidence_percentage']}) in {response_data['total_processing_time_ms']}ms")
+        logger.info('[FLASK] === ANALYSIS COMPLETE ===')
         
-        return jsonify(response), 200
+        # PRODUCTION: Return JSON with explicit Content-Type header
+        response = jsonify(response_data)
+        response.headers['Content-Type'] = 'application/json'
+        response.status_code = 200
+        return response
         
     except Exception as e:
-        logger.error(f"Analysis failed: {str(e)}", exc_info=True)
-        return jsonify({
+        logger.error(f"[FLASK] ❌ Fatal error in analyze endpoint: {str(e)}", exc_info=True)
+        
+        # PRODUCTION: Return standardized error response
+        response = jsonify({
             'success': False,
-            'error': 'Analysis failed',
-            'message': str(e)
-        }), 500
+            'error': 'Analysis failed due to internal error',
+            'error_code': 'ANALYSIS_ERROR',
+            'error_details': str(e),
+            'layer': 'ml_service',
+            'timestamp': int(time.time() * 1000)
+        })
+        response.headers['Content-Type'] = 'application/json'
+        response.status_code = 500
+        return response
 
 
 @app.route('/retrain', methods=['POST'])

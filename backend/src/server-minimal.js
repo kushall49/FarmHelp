@@ -5,6 +5,9 @@ require('dotenv').config();
 
 const app = express();
 
+// Import Crop model
+const Crop = require('./models/Crop.ts').default || require('./models/Crop.ts');
+
 // ============================================
 // MIDDLEWARE CONFIGURATION (ORDER IS CRITICAL!)
 // ============================================
@@ -12,7 +15,7 @@ const app = express();
 // 1. CORS - Enable Cross-Origin Resource Sharing
 // Must be first to handle preflight requests
 app.use(cors({
-  origin: ['http://localhost:19000', 'http://localhost:19001', 'http://localhost:19006', 'http://192.168.*.*:19000'],
+  origin: ['http://localhost:19000', 'http://localhost:19001', 'http://localhost:19003', 'http://localhost:19006', 'http://localhost:8081', 'http://192.168.*.*:19000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -105,19 +108,149 @@ const plantRoutes = require('./routes/plant');
 app.use('/api/plant', plantUploadRoutes);  // Handles /upload-plant
 app.use('/api/plant', plantRoutes);        // Handles /analyze and /last
 
-// Crops route - Returns list of supported crops
-app.get('/api/crops', (req, res) => {
-  const crops = [
-    { id: '1', name: 'Wheat', icon: '🌾' },
-    { id: '2', name: 'Rice', icon: '🌾' },
-    { id: '3', name: 'Corn', icon: '🌽' },
-    { id: '4', name: 'Tomato', icon: '🍅' },
-    { id: '5', name: 'Potato', icon: '🥔' },
-    { id: '6', name: 'Cotton', icon: '☁️' },
-    { id: '7', name: 'Sugarcane', icon: '🎋' },
-    { id: '8', name: 'Soybean', icon: '🫘' }
-  ];
-  res.json({ success: true, crops });
+// Enhanced Crops route - Smart recommendations based on soil, season, and temperature
+app.get('/api/crops', async (req, res) => {
+  try {
+    const { soil, season, temp } = req.query;
+
+    // If no filters provided, return all crops
+    if (!soil && !season && !temp) {
+      const Crop = mongoose.model('Crop');
+      const allCrops = await Crop.find({});
+      return res.json({ success: true, results: allCrops });
+    }
+
+    // Import scoring utility
+    const { scoreCrop, getCurrentSeason } = require('./utils/cropScoring');
+    const Crop = mongoose.model('Crop');
+
+    // Get all crops from database
+    const allCrops = await Crop.find({});
+
+    if (allCrops.length === 0) {
+      return res.json({ 
+        success: true, 
+        message: 'No crops found in database. Please run the seed script.',
+        results: [] 
+      });
+    }
+
+    // Parse temperature
+    const temperature = temp ? parseFloat(temp) : 25;
+
+    // Normalize inputs
+    const soilType = soil ? soil.toLowerCase() : 'loam';
+    const currentSeason = season ? season.toLowerCase() : getCurrentSeason(new Date().getMonth() + 1);
+
+    console.log(`[CROP RECOMMENDATION] Soil: ${soilType}, Season: ${currentSeason}, Temp: ${temperature}°C`);
+
+    // Build conditions object for scoring
+    const conditions = {
+      soilType: soilType,
+      season: currentSeason,
+      temperature: temperature,
+      rainfall: 800, // Default moderate rainfall
+      marketDemand: 'Medium' // Default
+    };
+
+    // Score each crop and add ranking
+    const scoredCrops = allCrops.map(crop => {
+      const scoreResult = scoreCrop(crop, conditions);
+      return {
+        _id: crop._id,
+        name: crop.name,
+        score: scoreResult.totalScore,
+        reasons: scoreResult.reasons,
+        suitableSoils: crop.suitableSoils,
+        seasons: crop.seasons,
+        minTemp: crop.minTemp,
+        maxTemp: crop.maxTemp,
+        minRainfall: crop.minRainfall,
+        maxRainfall: crop.maxRainfall,
+        waterRequirement: crop.waterRequirement,
+        yieldPotential: crop.yieldPotential,
+        marketDemand: crop.marketDemand
+      };
+    });
+
+    // Sort by score (highest first) and filter scores > 30
+    const recommendations = scoredCrops
+      .filter(crop => crop.score > 30)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10) // Top 10 recommendations
+      .map((crop, index) => ({
+        ...crop,
+        rank: index + 1
+      }));
+
+    console.log(`[CROP RECOMMENDATION] Found ${recommendations.length} suitable crops`);
+
+    res.json({ 
+      success: true, 
+      results: recommendations,
+      conditions: {
+        soil: soilType,
+        season: currentSeason,
+        temperature: temperature
+      }
+    });
+
+  } catch (error) {
+    console.error('[CROP RECOMMENDATION ERROR]', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get crop recommendations',
+      message: error.message
+    });
+  }
+});
+
+// Location-Based Crop Recommendation route - AI-powered recommendations
+app.get('/api/crops/location', async (req, res) => {
+  try {
+    const { lat, long } = req.query;
+
+    if (!lat || !long) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required parameters: lat and long',
+      });
+    }
+
+    console.log(`[CROP LOCATION] Received request for lat: ${lat}, long: ${long}`);
+
+    // Import necessary modules
+    const { recommendCrops } = require('./utils/cropScoring');
+    const Crop = mongoose.model('Crop');
+
+    // For geocoding, we'll use a simple reverse geocoding or mock data
+    // In production, use a proper geocoding service
+    const district = 'Belgaum'; // Mock - in production, use reverse geocoding API
+    const state = 'Karnataka'; // Mock - in production, use reverse geocoding API
+
+    // Get crop recommendations
+    const result = await recommendCrops(
+      parseFloat(lat),
+      parseFloat(long),
+      district,
+      state,
+      Crop
+    );
+
+    console.log(`[CROP LOCATION] Returning ${result.recommendations.length} recommendations`);
+
+    res.json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    console.error('[CROP LOCATION ERROR]', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get crop recommendations',
+      error: error.message,
+    });
+  }
 });
 
 // Chatbot route - AI farming assistant

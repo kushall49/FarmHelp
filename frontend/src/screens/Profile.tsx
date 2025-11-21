@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text, Card, Surface, List, Button, Avatar, Divider } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useSafeGoBack } from '../navigation/AppNavigator';
 
 export default function Profile({ navigation }: any) {
+  // ✅ NAVIGATION FIX: Use safe navigation with deep link fallback
+  const handleGoBack = useSafeGoBack();
   const [user] = useState({ name: 'Farmer', phone: '+91 9876543210', location: 'Karnataka, India' });
 
   async function logout() {
