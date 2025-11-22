@@ -1,0 +1,62 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run TestSpirit",
+      "type": "shell",
+      "command": "sh",
+      "args": [
+        "${workspaceFolder}/testspirit-run.sh"
+      ],
+      "windows": {
+        "command": "bash",
+        "args": [
+          "${workspaceFolder}/testspirit-run.sh"
+        ]
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "detail": "Run TestSpirit automated debugging analysis on the entire project"
+    },
+    {
+      "label": "Run TestSpirit (Background)",
+      "type": "shell",
+      "command": "sh",
+      "args": [
+        "${workspaceFolder}/testspirit-run.sh"
+      ],
+      "windows": {
+        "command": "bash",
+        "args": [
+          "${workspaceFolder}/testspirit-run.sh"
+        ]
+      },
+      "problemMatcher": [],
+      "isBackground": false,
+      "presentation": {
+        "echo": false,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "detail": "Run TestSpirit silently in background (for automation)"
+    }
+  ]
+}

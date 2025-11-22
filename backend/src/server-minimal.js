@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 require('dotenv').config();
 
 const app = express();
+app.disable('x-powered-by');
 
 // Import Crop model
 const Crop = require('./models/Crop.ts').default || require('./models/Crop.ts');
@@ -159,8 +160,8 @@ app.get('/api/crops', async (req, res) => {
       return {
         _id: crop._id,
         name: crop.name,
-        score: scoreResult.totalScore,
-        reasons: scoreResult.reasons,
+        score: scoreResult.score || scoreResult.totalScore || 0,
+        reasons: scoreResult.reasons || [],
         suitableSoils: crop.suitableSoils,
         seasons: crop.seasons,
         minTemp: crop.minTemp,
@@ -173,9 +174,16 @@ app.get('/api/crops', async (req, res) => {
       };
     });
 
-    // Sort by score (highest first) and filter scores > 30
+    // Log top 3 scores for debugging
+    const topScores = scoredCrops
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map(c => `${c.name}: ${c.score}`);
+    console.log(`[CROP RECOMMENDATION] Top 3 scores: ${topScores.join(', ')}`);
+
+    // Sort by score (highest first) and filter scores > 20 (lowered from 30)
     const recommendations = scoredCrops
-      .filter(crop => crop.score > 30)
+      .filter(crop => crop.score > 20)
       .sort((a, b) => b.score - a.score)
       .slice(0, 10) // Top 10 recommendations
       .map((crop, index) => ({

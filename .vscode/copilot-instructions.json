@@ -1,0 +1,17 @@
+{
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "text": "When the user says 'Run TestSpirit and fix all errors' or uses the command '/run_testspirit_fix', follow these steps:\n\n1. Execute the VS Code task 'Run TestSpirit' using the command: Tasks: Run Task → Run TestSpirit\n2. Wait for the task to complete and verify .testspirit_output.json exists in the project root\n3. Read and parse the entire .testspirit_output.json file\n4. Follow the complete workflow defined in .cursor/rules/testspirit.md\n5. Prioritize issues: Critical → High → Medium → Low\n6. For each issue:\n   - Read the affected file completely\n   - Use semantic_search to find related code\n   - Identify the root cause (not just the symptom)\n   - Apply ONLY real fixes using actual project code\n   - NEVER invent functions, hard-code values, or create placeholders\n   - Verify the fix won't break other code\n7. After all fixes, re-run TestSpirit to verify improvements\n8. Provide a comprehensive summary of all changes\n\nIMPORTANT RULES:\n- Use ONLY real functions and file paths from the project\n- Fix root causes, not symptoms\n- TestSpirit output is the source of truth\n- Never hard-code or create fake implementations\n- Read .cursor/rules/testspirit.md for complete guidelines"
+    }
+  ],
+  "github.copilot.chat.triggers": [
+    {
+      "pattern": "(run|execute|start) testspirit",
+      "instruction": "Execute the TestSpirit automated debugging workflow as defined in .cursor/rules/testspirit.md"
+    },
+    {
+      "pattern": "fix (all|testspirit) (errors|issues|problems)",
+      "instruction": "Run TestSpirit analysis and apply fixes following .cursor/rules/testspirit.md guidelines"
+    }
+  ]
+}

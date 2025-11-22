@@ -6,6 +6,7 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
 const app = express();
+app.disable('x-powered-by');
 
 // ============================================
 // MODELS
@@ -69,7 +70,11 @@ mongoose.connect(MONGODB_URI, {
 // AUTHENTICATION MIDDLEWARE
 // ============================================
 
-const JWT_SECRET = process.env.JWT_SECRET || 'farmhelp-secret-key-2024';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required. Add JWT_SECRET to your .env file.');
+}
 
 const authMiddleware = (req, res, next) => {
   try {
@@ -339,8 +344,15 @@ app.get('/api/crops', async (req, res) => {
       };
     });
 
+    // Log top 3 scores for debugging
+    const topScores = scoredCrops
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map(c => `${c.name}: ${c.score}`);
+    console.log(`[CROP RECOMMENDATION] Top 3 scores: ${topScores.join(', ')}`);
+
     const recommendations = scoredCrops
-      .filter(crop => crop.score > 30)
+      .filter(crop => crop.score > 20) // Lowered threshold from 30 to 20
       .sort((a, b) => b.score - a.score)
       .slice(0, 10)
       .map((crop, index) => ({ ...crop, rank: index + 1 }));
@@ -385,18 +397,23 @@ app.get('/api/community', authMiddleware, async (req, res) => {
 // Create post
 app.post('/api/community', authMiddleware, async (req, res) => {
   try {
-    const { content, imageUrl } = req.body;
+    const { title, content, imageUrl } = req.body;
 
     if (!content) {
       return res.status(400).json({ error: 'Content is required' });
     }
 
+    // Auto-generate title if not provided
+    const postTitle = title || content.substring(0, 50) + (content.length > 50 ? '...' : '');
+
     const post = new Post({
+      title: postTitle,
       author: req.user.userId || req.user.id,
       content,
-      imageUrl,
-      likes: [],
-      comments: []
+      imageUrl: imageUrl || '',
+      comments: [],
+      upvotes: [],
+      downvotes: []
     });
 
     await post.save();
@@ -410,37 +427,90 @@ app.post('/api/community', authMiddleware, async (req, res) => {
 });
 
 // ============================================
-// CHATBOT ROUTE
+// CHATBOT ROUTE (Advanced AI System)
 // ============================================
+
+const chatbotController = require('./chatbot/controllers/chatbotController');
+
+// TEMPORARY: Chatbot without auth for testing
+app.post('/api/chatbot/test', async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ 
+        success: false,
+        error: 'Message is required' 
+      });
+    }
+
+    // Use test user ID
+    const userId = 'test-user-' + Date.now();
+
+    // Pass message to chatbot controller
+    const result = await chatbotController.handleMessage(userId, message);
+
+    if (result.success) {
+      res.json({ 
+        success: true,
+        reply: result.reply,
+        intent: result.intent,
+        confidence: result.confidence
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        error: result.reply || 'Failed to process message'
+      });
+    }
+  } catch (error) {
+    console.error('[CHATBOT TEST ERROR]', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Chatbot service temporarily unavailable',
+      details: error.message
+    });
+  }
+});
 
 app.post('/api/chatbot', authMiddleware, async (req, res) => {
   try {
     const { message } = req.body;
 
     if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'Message is required' 
+      });
     }
 
-    // Simple rule-based responses
-    const lowerMessage = message.toLowerCase();
-    let response = '';
+    // Get user ID from authenticated request
+    const userId = req.user?.userId || req.user?.id || 'anonymous';
 
-    if (lowerMessage.includes('crop') || lowerMessage.includes('recommendation')) {
-      response = 'For crop recommendations, please visit the Crop Recommendation page. You can enter your soil type, season, and temperature to get personalized suggestions!';
-    } else if (lowerMessage.includes('disease') || lowerMessage.includes('plant')) {
-      response = 'To analyze plant diseases, use the Plant Health Analyzer. Simply upload a photo of your plant, and our AI will identify any issues!';
-    } else if (lowerMessage.includes('weather')) {
-      response = 'Weather information is available in the Location-Based Crop Recommendation feature. Enable location access to get real-time weather data!';
-    } else if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      response = 'Hello! I\'m FarmHelp Assistant. How can I help you today? You can ask me about crop recommendations, plant diseases, or weather information.';
+    // Pass message to new chatbot controller
+    const result = await chatbotController.handleMessage(userId, message);
+
+    if (result.success) {
+      // Return reply in format expected by frontend
+      res.json({ 
+        success: true,
+        reply: result.reply,
+        intent: result.intent,
+        confidence: result.confidence
+      });
     } else {
-      response = 'I can help you with crop recommendations, plant disease detection, and weather information. What would you like to know?';
+      res.status(500).json({
+        success: false,
+        error: result.reply || 'Failed to process message'
+      });
     }
-
-    res.json({ success: true, response });
   } catch (error) {
     console.error('[CHATBOT ERROR]', error);
-    res.status(500).json({ error: 'Chatbot error', message: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: 'Chatbot service temporarily unavailable',
+      details: error.message
+    });
   }
 });
 

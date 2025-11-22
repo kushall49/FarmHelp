@@ -1,0 +1,18 @@
+{
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "testspirit.fixer",
+        "name": "TestSpirit Fixer",
+        "description": "Automatically runs TestSpirit analysis and fixes all detected issues",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "run_testspirit_fix",
+            "description": "Run TestSpirit analysis and automatically apply fixes for all detected issues"
+          }
+        ]
+      }
+    ]
+  }
+}

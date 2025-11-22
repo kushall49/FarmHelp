@@ -9,6 +9,26 @@ const CONFIRMED_DATA_PATH = path.join(__dirname, '../../data/confirmed');
 const MIN_IMAGES_FOR_RETRAIN = parseInt(process.env.MIN_IMAGES_FOR_RETRAIN) || 100;
 
 /**
+ * Validate and sanitize file paths to prevent path traversal attacks
+ * @param {string} userPath - User-provided path component
+ * @param {string} basePath - Base directory to validate against
+ * @returns {string|null} - Validated absolute path or null if invalid
+ */
+function validatePath(userPath, basePath) {
+  // Remove any path traversal attempts
+  const sanitized = userPath.replace(/\.\./g, '').replace(/[/\\]/g, '_');
+  const fullPath = path.resolve(basePath, sanitized);
+  
+  // Ensure the resolved path is within the base directory
+  if (!fullPath.startsWith(path.resolve(basePath))) {
+    console.error('[Security] Path traversal attempt blocked:', userPath);
+    return null;
+  }
+  
+  return fullPath;
+}
+
+/**
  * Ensure confirmed data directory exists
  */
 function ensureConfirmedDataDir() {
@@ -40,21 +60,51 @@ exports.confirmImage = async (req, res) => {
     const disease = confirmedDisease || analysis.prediction.disease.name;
     const crop = analysis.prediction.crop;
 
-    // Create directory structure: /confirmed/{crop}_{disease}/
-    const labelDir = path.join(CONFIRMED_DATA_PATH, `${crop}_${disease}`.replace(/\s+/g, '_'));
+    // Sanitize disease and crop names to prevent path traversal
+    const sanitizedLabel = `${crop}_${disease}`.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const labelDir = validatePath(sanitizedLabel, CONFIRMED_DATA_PATH);
+    
+    if (!labelDir) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid disease or crop name'
+      });
+    }
+    
     if (!fs.existsSync(labelDir)) {
       fs.mkdirSync(labelDir, { recursive: true });
     }
 
-    // Copy image to confirmed dataset
+    // Validate source image path
     const sourceImagePath = analysis.originalImage.url;
-    const timestamp = Date.now();
-    const fileName = `${analysis._id}_${timestamp}.jpg`;
-    const destImagePath = path.join(labelDir, fileName);
+    const uploadsDir = path.join(__dirname, '../../uploads');
+    const validatedSourcePath = validatePath(path.basename(sourceImagePath), uploadsDir);
+    
+    if (!validatedSourcePath || !fs.existsSync(validatedSourcePath)) {
+      return res.status(404).json({
+        success: false,
+        error: 'Source image not found or invalid path'
+      });
+    }
 
-    // Copy file if it exists locally
-    if (fs.existsSync(sourceImagePath)) {
-      fs.copyFileSync(sourceImagePath, destImagePath);
+    // Sanitize filename
+    const timestamp = Date.now();
+    const sanitizedId = String(analysis._id).replace(/[^a-zA-Z0-9-]/g, '');
+    const fileName = `${sanitizedId}_${timestamp}.jpg`;
+    
+    // Validate destination path to prevent traversal
+    const destImagePath = validatePath(fileName, labelDir);
+    if (!destImagePath) {
+      console.error('[Security] Invalid destination path blocked:', fileName);
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid file path detected' 
+      });
+    }
+
+    // Copy file securely
+    try {
+      fs.copyFileSync(validatedSourcePath, destImagePath);
       console.log(`[Retraining] Confirmed image saved: ${destImagePath}`);
 
       // Update analysis record
@@ -69,13 +119,13 @@ exports.confirmImage = async (req, res) => {
       res.status(200).json({
         success: true,
         message: 'Image confirmed and saved for retraining',
-        path: destImagePath,
         disease
       });
-    } else {
-      res.status(404).json({
+    } catch (copyError) {
+      console.error('[Retraining] File copy error:', copyError);
+      return res.status(500).json({
         success: false,
-        error: 'Source image not found'
+        error: 'Failed to copy image file'
       });
     }
 

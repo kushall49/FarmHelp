@@ -8,7 +8,21 @@ const { callModelService } = require('../utils/modelClient');
 
 const router = express.Router();
 
-// Configure multer for file uploads
+// Safe path utilities to prevent path traversal
+function sanitizePath(filePath) {
+  const normalized = path.normalize(filePath).replace(/^(\.\.(\/|\\|$))+/, '');
+  const uploadDir = path.join(__dirname, '../../uploads');
+  const resolved = path.resolve(uploadDir, normalized);
+  
+  // Ensure the resolved path is within uploadDir
+  if (!resolved.startsWith(uploadDir)) {
+    throw new Error('Invalid file path - path traversal detected');
+  }
+  
+  return resolved;
+}
+
+// Configure multer for file uploads with size limits
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, '../../uploads');
@@ -23,7 +37,12 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage });
+const upload = multer({ 
+  storage,
+  limits: { 
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
 
 // POST /api/plant/analyze - Upload and analyze plant image
 router.post('/analyze', authMiddleware, upload.single('image'), async (req, res) => {
@@ -42,10 +61,12 @@ router.post('/analyze', authMiddleware, upload.single('image'), async (req, res)
     }
 
     console.log('[PLANT] Analyzing image:', req.file.filename);
-    const filePath = req.file.path;
+    
+    // Sanitize file path before use
+    const safePath = sanitizePath(req.file.path);
 
     // Call model service
-    const modelResult = await callModelService(filePath);
+    const modelResult = await callModelService(safePath);
 
     console.log('[PLANT] Model result:', modelResult);
 
@@ -85,7 +106,8 @@ router.post('/analyze', authMiddleware, upload.single('image'), async (req, res)
     // Clean up uploaded file on error
     if (req.file && req.file.path) {
       try {
-        fs.unlinkSync(req.file.path);
+        const safeCleanupPath = sanitizePath(req.file.path);
+        fs.unlinkSync(safeCleanupPath);
       } catch (cleanupErr) {
         console.error('[PLANT] Failed to cleanup file:', cleanupErr.message);
       }

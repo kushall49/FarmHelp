@@ -123,16 +123,26 @@ userSchema.methods.recalculateAverageRating = function() {
 
 // Static helper for creating test user and JWT
 userSchema.statics.createTestUser = async function() {
-  const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key';
+  const JWT_SECRET = process.env.JWT_SECRET;
   
-  // Create or find test user
+  if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  
+  // Create or find test user (for development/testing only)
   let user = await this.findOne({ phone: '9999999999' });
   if (!user) {
+    // Use bcrypt to hash a test password from environment variable
+    const bcrypt = require('bcrypt');
+    const testPassword = process.env.DEV_TEST_PASSWORD || 'DevTest123!';
+    const hashedPassword = await bcrypt.hash(testPassword, 10);
+    
     user = await this.create({
       phone: '9999999999',
       name: 'Test Farmer',
-      passwordHash: 'test-hash'
+      passwordHash: hashedPassword
     });
+    console.log('[Auth] Created test user with secure password');
   }
 
   // Generate JWT

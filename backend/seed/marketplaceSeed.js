@@ -1,10 +1,17 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 const ServiceListing = require('../src/models/ServiceListing');
 const JobRequest = require('../src/models/JobRequest');
 const User = require('../src/models/User');
 require('dotenv').config();
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://1ms23cs094_db_user:AEQZush8GtcXuvfH@cluster0.ug766o7.mongodb.net/farmmate';
+
+// Generate secure test password hash (use env variable or secure random password)
+const generateTestPasswordHash = async () => {
+  const testPassword = process.env.TEST_USER_PASSWORD || 'SecureTest123!';
+  return await bcrypt.hash(testPassword, 10);
+};
 
 async function seedMarketplace() {
   try {
@@ -14,6 +21,10 @@ async function seedMarketplace() {
     });
     console.log('✓ Connected to MongoDB');
     console.log('✓ Database:', mongoose.connection.name);
+    
+    // Generate password hash once for all test users
+    const passwordHash = await generateTestPasswordHash();
+    console.log('✓ Generated secure test password hash');
     
     // Get or create test users
     let user1 = await User.findOne({ email: 'ravi@test.com' });

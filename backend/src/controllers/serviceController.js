@@ -114,16 +114,21 @@ exports.getServiceListings = async (req, res) => {
       limit = 20 
     } = req.query;
     
+    // Utility to escape special regex characters to prevent ReDoS
+    const escapeRegex = (str) => {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
+    
     // Build filter query
     const filter = {};
     
-    // CRITICAL: District-based filtering
+    // CRITICAL: District-based filtering with sanitized input
     if (district && district !== 'All Districts') {
-      filter['location.district'] = new RegExp(district, 'i');
+      filter['location.district'] = new RegExp(escapeRegex(district), 'i');
     }
     
     if (taluk) {
-      filter['location.taluk'] = new RegExp(taluk, 'i');
+      filter['location.taluk'] = new RegExp(escapeRegex(taluk), 'i');
     }
     
     if (serviceType && serviceType !== 'All') {

@@ -10,6 +10,7 @@ const machinesRoutes = require('./routes/machines');
 // const chatbotRoutes = require('./routes/chatbot');
 
 const app = express();
+app.disable('x-powered-by');
 
 // Middleware
 app.use(cors());

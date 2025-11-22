@@ -5,6 +5,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeGoBack } from '../navigation/AppNavigator';
+import { sanitizeImageUri, getSafeAvatarUrl } from '../utils/uriValidation';
 
 const API_URL = 'http://localhost:4000';
 

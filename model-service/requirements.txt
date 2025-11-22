@@ -1,4 +1,7 @@
-fastapi
-uvicorn
-pillow
-python-multipart
+Flask==3.0.0
+flask-cors==4.0.0
+tensorflow==2.20.0
+pillow>=11.0.0
+numpy>=2.0.0
+pandas>=2.2.0
+werkzeug==3.0.1

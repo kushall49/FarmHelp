@@ -1,0 +1,2815 @@
+﻿[
+    {
+        "Test":  "Server Health Check",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "status":  "ok",
+                         "message":  "FarmHelp API is running",
+                         "timestamp":  "2025-11-22T09:23:19.211Z"
+                     }
+    },
+    {
+        "Test":  "User Signup",
+        "Status":  "PASS",
+        "StatusCode":  201,
+        "Response":  {
+                         "success":  true,
+                         "token":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MjE4MTA5MTEwNTg0ZjRmODYzNzQzMCIsInVzZXJJZCI6IjY5MjE4MTA5MTEwNTg0ZjRmODYzNzQzMCIsImVtYWlsIjoiZmFybWVyMTc2MzgwMzQwMEBmYXJtaGVscC5jb20iLCJpYXQiOjE3NjM4MDM0MDEsImV4cCI6MTc2NjM5NTQwMX0.BUs-5AsvibwiyNZR-bwlG8cGg9LZMd7MKTuebHjoY5U",
+                         "user":  {
+                                      "id":  "69218109110584f4f8637430",
+                                      "name":  "Test Farmer 1763803400",
+                                      "email":  "farmer1763803400@farmhelp.com"
+                                  }
+                     }
+    },
+    {
+        "Test":  "User Login",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "token":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MjE4MTA5MTEwNTg0ZjRmODYzNzQzMCIsInVzZXJJZCI6IjY5MjE4MTA5MTEwNTg0ZjRmODYzNzQzMCIsImVtYWlsIjoiZmFybWVyMTc2MzgwMzQwMEBmYXJtaGVscC5jb20iLCJpYXQiOjE3NjM4MDM0MDIsImV4cCI6MTc2NjM5NTQwMn0.e5qIGxulUaYRBshHIZzWY3tq7Dy3I3XJpJX0N6uiWwo",
+                         "user":  {
+                                      "id":  "69218109110584f4f8637430",
+                                      "name":  "Test Farmer 1763803400",
+                                      "email":  "farmer1763803400@farmhelp.com"
+                                  }
+                     }
+    },
+    {
+        "Test":  "Get All Crops",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "results":  [
+                                         {
+                                             "_id":  "692094ba700f591d50c07259",
+                                             "name":  "Rice (Paddy)",
+                                             "suitableSoils":  [
+                                                                   "clay",
+                                                                   "loam",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  1000,
+                                             "maxRainfall":  2500,
+                                             "waterRequirement":  "High",
+                                             "yieldPotential":  "25-35 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  8,
+                                             "seasonScore":  9,
+                                             "tempScore":  8,
+                                             "rainfallScore":  9,
+                                             "marketScore":  9,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.565Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.565Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725a",
+                                             "name":  "Cotton",
+                                             "suitableSoils":  [
+                                                                   "black",
+                                                                   "alluvial",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  21,
+                                             "maxTemp":  35,
+                                             "minRainfall":  600,
+                                             "maxRainfall":  1200,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "10-15 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  9,
+                                             "seasonScore":  8,
+                                             "tempScore":  7,
+                                             "rainfallScore":  7,
+                                             "marketScore":  9,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.565Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.565Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725b",
+                                             "name":  "Maize (Corn)",
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  18,
+                                             "maxTemp":  32,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "20-28 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  7,
+                                             "seasonScore":  8,
+                                             "tempScore":  8,
+                                             "rainfallScore":  7,
+                                             "marketScore":  8,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.565Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.565Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725c",
+                                             "name":  "Jowar (Sorghum)",
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "red",
+                                                                   "black"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  400,
+                                             "maxRainfall":  750,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "12-18 quintals/acre",
+                                             "marketDemand":  "Medium",
+                                             "soilScore":  7,
+                                             "seasonScore":  7,
+                                             "tempScore":  7,
+                                             "rainfallScore":  6,
+                                             "marketScore":  6,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.565Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.565Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725d",
+                                             "name":  "Bajra (Pearl Millet)",
+                                             "suitableSoils":  [
+                                                                   "sandy",
+                                                                   "loam",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  25,
+                                             "maxTemp":  38,
+                                             "minRainfall":  400,
+                                             "maxRainfall":  650,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "8-12 quintals/acre",
+                                             "marketDemand":  "Medium",
+                                             "soilScore":  6,
+                                             "seasonScore":  7,
+                                             "tempScore":  8,
+                                             "rainfallScore":  6,
+                                             "marketScore":  6,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.565Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.565Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725e",
+                                             "name":  "Groundnut (Peanut)",
+                                             "suitableSoils":  [
+                                                                   "sandy",
+                                                                   "loam",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  30,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  1000,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "12-18 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  7,
+                                             "seasonScore":  8,
+                                             "tempScore":  7,
+                                             "rainfallScore":  7,
+                                             "marketScore":  8,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.565Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.565Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725f",
+                                             "name":  "Soybean",
+                                             "suitableSoils":  [
+                                                                   "black",
+                                                                   "red",
+                                                                   "loam"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  30,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "10-15 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  8,
+                                             "seasonScore":  8,
+                                             "tempScore":  7,
+                                             "rainfallScore":  7,
+                                             "marketScore":  9,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.565Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.565Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07260",
+                                             "name":  "Wheat",
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "clay",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  10,
+                                             "maxTemp":  25,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "18-25 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  9,
+                                             "seasonScore":  9,
+                                             "tempScore":  9,
+                                             "rainfallScore":  7,
+                                             "marketScore":  10,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.566Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.566Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07261",
+                                             "name":  "Gram (Chickpea)",
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "black",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  10,
+                                             "maxTemp":  30,
+                                             "minRainfall":  300,
+                                             "maxRainfall":  600,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "8-12 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  7,
+                                             "seasonScore":  8,
+                                             "tempScore":  8,
+                                             "rainfallScore":  6,
+                                             "marketScore":  8,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.566Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.566Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07262",
+                                             "name":  "Mustard",
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  10,
+                                             "maxTemp":  25,
+                                             "minRainfall":  300,
+                                             "maxRainfall":  500,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "6-10 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  7,
+                                             "seasonScore":  8,
+                                             "tempScore":  8,
+                                             "rainfallScore":  6,
+                                             "marketScore":  8,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.566Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.566Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07263",
+                                             "name":  "Barley",
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  5,
+                                             "maxTemp":  20,
+                                             "minRainfall":  300,
+                                             "maxRainfall":  600,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "15-20 quintals/acre",
+                                             "marketDemand":  "Medium",
+                                             "soilScore":  6,
+                                             "seasonScore":  7,
+                                             "tempScore":  8,
+                                             "rainfallScore":  6,
+                                             "marketScore":  6,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.566Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.566Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07264",
+                                             "name":  "Potato",
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  15,
+                                             "maxTemp":  25,
+                                             "minRainfall":  400,
+                                             "maxRainfall":  700,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "80-120 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  8,
+                                             "seasonScore":  8,
+                                             "tempScore":  8,
+                                             "rainfallScore":  7,
+                                             "marketScore":  9,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.566Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.566Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07265",
+                                             "name":  "Onion",
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  13,
+                                             "maxTemp":  24,
+                                             "minRainfall":  350,
+                                             "maxRainfall":  650,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "60-90 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  7,
+                                             "seasonScore":  8,
+                                             "tempScore":  7,
+                                             "rainfallScore":  6,
+                                             "marketScore":  9,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.566Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.566Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07266",
+                                             "name":  "Watermelon",
+                                             "suitableSoils":  [
+                                                                   "sandy",
+                                                                   "loam",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "summer"
+                                                         ],
+                                             "minTemp":  24,
+                                             "maxTemp":  35,
+                                             "minRainfall":  300,
+                                             "maxRainfall":  500,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "120-150 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  7,
+                                             "seasonScore":  9,
+                                             "tempScore":  8,
+                                             "rainfallScore":  6,
+                                             "marketScore":  8,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.566Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.566Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07267",
+                                             "name":  "Muskmelon",
+                                             "suitableSoils":  [
+                                                                   "sandy",
+                                                                   "loam"
+                                                               ],
+                                             "seasons":  [
+                                                             "summer"
+                                                         ],
+                                             "minTemp":  25,
+                                             "maxTemp":  35,
+                                             "minRainfall":  250,
+                                             "maxRainfall":  450,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "80-100 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  7,
+                                             "seasonScore":  9,
+                                             "tempScore":  8,
+                                             "rainfallScore":  6,
+                                             "marketScore":  8,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.566Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.566Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07268",
+                                             "name":  "Cucumber",
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "summer"
+                                                         ],
+                                             "minTemp":  18,
+                                             "maxTemp":  30,
+                                             "minRainfall":  300,
+                                             "maxRainfall":  500,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "50-70 quintals/acre",
+                                             "marketDemand":  "Medium",
+                                             "soilScore":  7,
+                                             "seasonScore":  8,
+                                             "tempScore":  7,
+                                             "rainfallScore":  6,
+                                             "marketScore":  7,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.566Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.566Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07269",
+                                             "name":  "Tomato",
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "red",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "summer",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  18,
+                                             "maxTemp":  30,
+                                             "minRainfall":  400,
+                                             "maxRainfall":  700,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "100-150 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  8,
+                                             "seasonScore":  8,
+                                             "tempScore":  8,
+                                             "rainfallScore":  7,
+                                             "marketScore":  9,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.566Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.566Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0726a",
+                                             "name":  "Sugarcane",
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "black",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  1500,
+                                             "maxRainfall":  2500,
+                                             "waterRequirement":  "High",
+                                             "yieldPotential":  "300-400 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  8,
+                                             "seasonScore":  8,
+                                             "tempScore":  8,
+                                             "rainfallScore":  9,
+                                             "marketScore":  9,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.566Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.566Z"
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0726b",
+                                             "name":  "Turmeric",
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "red",
+                                                                   "clay"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  1500,
+                                             "maxRainfall":  2500,
+                                             "waterRequirement":  "High",
+                                             "yieldPotential":  "150-200 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "soilScore":  8,
+                                             "seasonScore":  7,
+                                             "tempScore":  7,
+                                             "rainfallScore":  8,
+                                             "marketScore":  9,
+                                             "__v":  0,
+                                             "createdAt":  "2025-11-21T16:35:06.566Z",
+                                             "updatedAt":  "2025-11-21T16:35:06.566Z"
+                                         }
+                                     ]
+                     }
+    },
+    {
+        "Test":  "Get Crops for Loam Soil",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "results":  [
+                                         {
+                                             "_id":  "692094ba700f591d50c0725b",
+                                             "name":  "Maize (Corn)",
+                                             "score":  100,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  18,
+                                             "maxTemp":  32,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "20-28 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  1
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07260",
+                                             "name":  "Wheat",
+                                             "score":  100,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "clay",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  10,
+                                             "maxTemp":  25,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "18-25 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  2
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07261",
+                                             "name":  "Gram (Chickpea)",
+                                             "score":  90,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "black",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  10,
+                                             "maxTemp":  30,
+                                             "minRainfall":  300,
+                                             "maxRainfall":  600,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "8-12 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  3
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07262",
+                                             "name":  "Mustard",
+                                             "score":  90,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  10,
+                                             "maxTemp":  25,
+                                             "minRainfall":  300,
+                                             "maxRainfall":  500,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "6-10 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  4
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07264",
+                                             "name":  "Potato",
+                                             "score":  90,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  15,
+                                             "maxTemp":  25,
+                                             "minRainfall":  400,
+                                             "maxRainfall":  700,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "80-120 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  5
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07269",
+                                             "name":  "Tomato",
+                                             "score":  90,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "red",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "summer",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  18,
+                                             "maxTemp":  30,
+                                             "minRainfall":  400,
+                                             "maxRainfall":  700,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "100-150 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  6
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0726a",
+                                             "name":  "Sugarcane",
+                                             "score":  87,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "black",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  1500,
+                                             "maxRainfall":  2500,
+                                             "waterRequirement":  "High",
+                                             "yieldPotential":  "300-400 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  7
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725f",
+                                             "name":  "Soybean",
+                                             "score":  84,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "black",
+                                                                   "red",
+                                                                   "loam"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  30,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "10-15 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  8
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725e",
+                                             "name":  "Groundnut (Peanut)",
+                                             "score":  83,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "sandy",
+                                                                   "loam",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  30,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  1000,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "12-18 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  9
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07265",
+                                             "name":  "Onion",
+                                             "score":  83,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is acceptable",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  13,
+                                             "maxTemp":  24,
+                                             "minRainfall":  350,
+                                             "maxRainfall":  650,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "60-90 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  10
+                                         }
+                                     ],
+                         "conditions":  {
+                                            "soil":  "loam",
+                                            "season":  "winter",
+                                            "temperature":  25
+                                        }
+                     }
+    },
+    {
+        "Test":  "Get Crops for Monsoon Season",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "results":  [
+                                         {
+                                             "_id":  "692094ba700f591d50c0725b",
+                                             "name":  "Maize (Corn)",
+                                             "score":  100,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  18,
+                                             "maxTemp":  32,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "20-28 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  1
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725e",
+                                             "name":  "Groundnut (Peanut)",
+                                             "score":  100,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "sandy",
+                                                                   "loam",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  30,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  1000,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "12-18 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  2
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725f",
+                                             "name":  "Soybean",
+                                             "score":  100,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "black",
+                                                                   "red",
+                                                                   "loam"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  30,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "10-15 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  3
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0726b",
+                                             "name":  "Turmeric",
+                                             "score":  88,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "red",
+                                                                   "clay"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  1500,
+                                             "maxRainfall":  2500,
+                                             "waterRequirement":  "High",
+                                             "yieldPotential":  "150-200 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  4
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07259",
+                                             "name":  "Rice (Paddy)",
+                                             "score":  87,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "clay",
+                                                                   "loam",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  1000,
+                                             "maxRainfall":  2500,
+                                             "waterRequirement":  "High",
+                                             "yieldPotential":  "25-35 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  5
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0726a",
+                                             "name":  "Sugarcane",
+                                             "score":  87,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "black",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  1500,
+                                             "maxRainfall":  2500,
+                                             "waterRequirement":  "High",
+                                             "yieldPotential":  "300-400 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  6
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725a",
+                                             "name":  "Cotton",
+                                             "score":  84,
+                                             "reasons":  [
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "black",
+                                                                   "alluvial",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  21,
+                                             "maxTemp":  35,
+                                             "minRainfall":  600,
+                                             "maxRainfall":  1200,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "10-15 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  7
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07260",
+                                             "name":  "Wheat",
+                                             "score":  84,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "clay",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  10,
+                                             "maxTemp":  25,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "18-25 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  8
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725c",
+                                             "name":  "Jowar (Sorghum)",
+                                             "score":  82,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "red",
+                                                                   "black"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  400,
+                                             "maxRainfall":  750,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "12-18 quintals/acre",
+                                             "marketDemand":  "Medium",
+                                             "rank":  9
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725d",
+                                             "name":  "Bajra (Pearl Millet)",
+                                             "score":  82,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "sandy",
+                                                                   "loam",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  25,
+                                             "maxTemp":  38,
+                                             "minRainfall":  400,
+                                             "maxRainfall":  650,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "8-12 quintals/acre",
+                                             "marketDemand":  "Medium",
+                                             "rank":  10
+                                         }
+                                     ],
+                         "conditions":  {
+                                            "soil":  "loam",
+                                            "season":  "monsoon",
+                                            "temperature":  25
+                                        }
+                     }
+    },
+    {
+        "Test":  "Get Crops for 25C",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "results":  [
+                                         {
+                                             "_id":  "692094ba700f591d50c0725b",
+                                             "name":  "Maize (Corn)",
+                                             "score":  100,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  18,
+                                             "maxTemp":  32,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "20-28 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  1
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07260",
+                                             "name":  "Wheat",
+                                             "score":  100,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "clay",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  10,
+                                             "maxTemp":  25,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "18-25 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  2
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07261",
+                                             "name":  "Gram (Chickpea)",
+                                             "score":  90,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "black",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  10,
+                                             "maxTemp":  30,
+                                             "minRainfall":  300,
+                                             "maxRainfall":  600,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "8-12 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  3
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07262",
+                                             "name":  "Mustard",
+                                             "score":  90,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  10,
+                                             "maxTemp":  25,
+                                             "minRainfall":  300,
+                                             "maxRainfall":  500,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "6-10 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  4
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07264",
+                                             "name":  "Potato",
+                                             "score":  90,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  15,
+                                             "maxTemp":  25,
+                                             "minRainfall":  400,
+                                             "maxRainfall":  700,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "80-120 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  5
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07269",
+                                             "name":  "Tomato",
+                                             "score":  90,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "red",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "summer",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  18,
+                                             "maxTemp":  30,
+                                             "minRainfall":  400,
+                                             "maxRainfall":  700,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "100-150 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  6
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0726a",
+                                             "name":  "Sugarcane",
+                                             "score":  87,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "black",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  1500,
+                                             "maxRainfall":  2500,
+                                             "waterRequirement":  "High",
+                                             "yieldPotential":  "300-400 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  7
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725f",
+                                             "name":  "Soybean",
+                                             "score":  84,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "black",
+                                                                   "red",
+                                                                   "loam"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  30,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "10-15 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  8
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725e",
+                                             "name":  "Groundnut (Peanut)",
+                                             "score":  83,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "sandy",
+                                                                   "loam",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  30,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  1000,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "12-18 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  9
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07265",
+                                             "name":  "Onion",
+                                             "score":  83,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 25°C is acceptable",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  13,
+                                             "maxTemp":  24,
+                                             "minRainfall":  350,
+                                             "maxRainfall":  650,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "60-90 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  10
+                                         }
+                                     ],
+                         "conditions":  {
+                                            "soil":  "loam",
+                                            "season":  "winter",
+                                            "temperature":  25
+                                        }
+                     }
+    },
+    {
+        "Test":  "Get Crops (Combined Filters)",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "results":  [
+                                         {
+                                             "_id":  "692094ba700f591d50c07260",
+                                             "name":  "Wheat",
+                                             "score":  100,
+                                             "reasons":  [
+                                                             "Perfect match for clay soil",
+                                                             "Ideal for winter season",
+                                                             "Temperature 20°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "clay",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  10,
+                                             "maxTemp":  25,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "18-25 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  1
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725b",
+                                             "name":  "Maize (Corn)",
+                                             "score":  87,
+                                             "reasons":  [
+                                                             "Ideal for winter season",
+                                                             "Temperature 20°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  18,
+                                             "maxTemp":  32,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "20-28 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  2
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07261",
+                                             "name":  "Gram (Chickpea)",
+                                             "score":  77,
+                                             "reasons":  [
+                                                             "Ideal for winter season",
+                                                             "Temperature 20°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "black",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  10,
+                                             "maxTemp":  30,
+                                             "minRainfall":  300,
+                                             "maxRainfall":  600,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "8-12 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  3
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07262",
+                                             "name":  "Mustard",
+                                             "score":  77,
+                                             "reasons":  [
+                                                             "Ideal for winter season",
+                                                             "Temperature 20°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  10,
+                                             "maxTemp":  25,
+                                             "minRainfall":  300,
+                                             "maxRainfall":  500,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "6-10 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  4
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07265",
+                                             "name":  "Onion",
+                                             "score":  77,
+                                             "reasons":  [
+                                                             "Ideal for winter season",
+                                                             "Temperature 20°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  13,
+                                             "maxTemp":  24,
+                                             "minRainfall":  350,
+                                             "maxRainfall":  650,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "60-90 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  5
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07264",
+                                             "name":  "Potato",
+                                             "score":  76,
+                                             "reasons":  [
+                                                             "Ideal for winter season",
+                                                             "Temperature 20°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  15,
+                                             "maxTemp":  25,
+                                             "minRainfall":  400,
+                                             "maxRainfall":  700,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "80-120 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  6
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07269",
+                                             "name":  "Tomato",
+                                             "score":  76,
+                                             "reasons":  [
+                                                             "Ideal for winter season",
+                                                             "Temperature 20°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "red",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "summer",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  18,
+                                             "maxTemp":  30,
+                                             "minRainfall":  400,
+                                             "maxRainfall":  700,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "100-150 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  7
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0726a",
+                                             "name":  "Sugarcane",
+                                             "score":  74,
+                                             "reasons":  [
+                                                             "Ideal for winter season",
+                                                             "Temperature 20°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "black",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  1500,
+                                             "maxRainfall":  2500,
+                                             "waterRequirement":  "High",
+                                             "yieldPotential":  "300-400 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  8
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0726b",
+                                             "name":  "Turmeric",
+                                             "score":  73,
+                                             "reasons":  [
+                                                             "Perfect match for clay soil",
+                                                             "Temperature 20°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "red",
+                                                                   "clay"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  1500,
+                                             "maxRainfall":  2500,
+                                             "waterRequirement":  "High",
+                                             "yieldPotential":  "150-200 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  9
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07259",
+                                             "name":  "Rice (Paddy)",
+                                             "score":  71,
+                                             "reasons":  [
+                                                             "Perfect match for clay soil",
+                                                             "Temperature 20°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "clay",
+                                                                   "loam",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  1000,
+                                             "maxRainfall":  2500,
+                                             "waterRequirement":  "High",
+                                             "yieldPotential":  "25-35 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  10
+                                         }
+                                     ],
+                         "conditions":  {
+                                            "soil":  "clay",
+                                            "season":  "winter",
+                                            "temperature":  20
+                                        }
+                     }
+    },
+    {
+        "Test":  "Get Community Posts",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "posts":  [
+                                       {
+                                           "_id":  "68f32dd0086b2c99e8adf079",
+                                           "title":  "blah blah blah w",
+                                           "content":  "Bjeb wejkd akjsd kwe",
+                                           "imageUrl":  "https://res.cloudinary.com/dy5532ghs/image/upload/v1760767441/farmhelp-posts/asv9da80ath5k5nqggtr.jpg",
+                                           "author":  {
+                                                          "_id":  "68f32daf086b2c99e8adf069",
+                                                          "email":  "iamla@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-18T06:04:00.815Z",
+                                           "updatedAt":  "2025-10-18T06:04:00.815Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f32dd0086b2c99e8adf079"
+                                       },
+                                       {
+                                           "_id":  "68f32dcd086b2c99e8adf075",
+                                           "title":  "blah blah blah w",
+                                           "content":  "Bjeb wejkd akjsd kwe",
+                                           "imageUrl":  "https://res.cloudinary.com/dy5532ghs/image/upload/v1760767437/farmhelp-posts/tvz99aloqp4aahdaadb8.jpg",
+                                           "author":  {
+                                                          "_id":  "68f32daf086b2c99e8adf069",
+                                                          "email":  "iamla@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-18T06:03:57.465Z",
+                                           "updatedAt":  "2025-10-18T06:03:57.465Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f32dcd086b2c99e8adf075"
+                                       },
+                                       {
+                                           "_id":  "68f275b2c3a726e73d88229e",
+                                           "title":  "Best Tasdasda",
+                                           "content":  "what to do asdasda",
+                                           "imageUrl":  "",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T16:58:26.736Z",
+                                           "updatedAt":  "2025-10-17T16:58:26.736Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f275b2c3a726e73d88229e"
+                                       },
+                                       {
+                                           "_id":  "68f275aec3a726e73d88229a",
+                                           "title":  "Best Tasdasda",
+                                           "content":  "what to do asdasda",
+                                           "imageUrl":  "",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T16:58:22.041Z",
+                                           "updatedAt":  "2025-10-17T16:58:22.041Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f275aec3a726e73d88229a"
+                                       },
+                                       {
+                                           "_id":  "68f27458c3a726e73d882288",
+                                           "title":  "Best Time to Plant theo",
+                                           "content":  "what to do",
+                                           "imageUrl":  "",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T16:52:40.714Z",
+                                           "updatedAt":  "2025-10-17T16:52:40.714Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f27458c3a726e73d882288"
+                                       },
+                                       {
+                                           "_id":  "68f271788722fdf1c98359cc",
+                                           "title":  "Best Time to Plant the TOmoto",
+                                           "content":  "what to do",
+                                           "imageUrl":  "",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T16:40:24.596Z",
+                                           "updatedAt":  "2025-10-17T16:40:24.596Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f271788722fdf1c98359cc"
+                                       },
+                                       {
+                                           "_id":  "68f269adacc89e9cc509082c",
+                                           "title":  "My Crop",
+                                           "content":  "Advice me",
+                                           "imageUrl":  "",
+                                           "author":  {
+                                                          "_id":  "68f268b2acc89e9cc509081b",
+                                                          "email":  "kushalrishik@gmai.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+                                                           "68eff982c303c4628ac4a066"
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T16:07:09.282Z",
+                                           "updatedAt":  "2025-10-17T16:39:44.231Z",
+                                           "__v":  3,
+                                           "commentCount":  0,
+                                           "netVotes":  1,
+                                           "id":  "68f269adacc89e9cc509082c"
+                                       },
+                                       {
+                                           "_id":  "68f269aaacc89e9cc5090828",
+                                           "title":  "My Crop",
+                                           "content":  "Advice me",
+                                           "imageUrl":  "",
+                                           "author":  {
+                                                          "_id":  "68f268b2acc89e9cc509081b",
+                                                          "email":  "kushalrishik@gmai.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T16:07:06.983Z",
+                                           "updatedAt":  "2025-10-17T16:07:06.983Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f269aaacc89e9cc5090828"
+                                       },
+                                       {
+                                           "imageUrl":  "",
+                                           "_id":  "68f26251bc0fc9a5c68f639e",
+                                           "title":  "kjsjgajs",
+                                           "content":  "asdfjkasbdfljasdfhlkjdsfl",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T15:35:45.578Z",
+                                           "updatedAt":  "2025-10-17T15:35:45.578Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f26251bc0fc9a5c68f639e"
+                                       },
+                                       {
+                                           "imageUrl":  "",
+                                           "_id":  "68f25f09d65af4a738890108",
+                                           "title":  "ArechaNut Price Details",
+                                           "content":  "I Eaglry Waiting for Price Drop for the Deepawali",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T15:21:45.616Z",
+                                           "updatedAt":  "2025-10-17T15:21:45.616Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f25f09d65af4a738890108"
+                                       },
+                                       {
+                                           "imageUrl":  "",
+                                           "_id":  "68f25f09d65af4a738890104",
+                                           "title":  "ArechaNut Price Details",
+                                           "content":  "I Eaglry Waiting for Price Drop for the Deepawali",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T15:21:45.023Z",
+                                           "updatedAt":  "2025-10-17T15:21:45.023Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f25f09d65af4a738890104"
+                                       },
+                                       {
+                                           "_id":  "68f25f05d65af4a738890100",
+                                           "title":  "ArechaNut Price Details",
+                                           "content":  "I Eaglry Waiting for Price Drop for the Deepawali",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+                                                           "68eff982c303c4628ac4a066",
+                                                           "68eff982c303c4628ac4a066"
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T15:21:41.175Z",
+                                           "updatedAt":  "2025-10-17T16:48:50.678Z",
+                                           "__v":  2,
+                                           "imageUrl":  "",
+                                           "commentCount":  0,
+                                           "netVotes":  2,
+                                           "id":  "68f25f05d65af4a738890100"
+                                       },
+                                       {
+                                           "imageUrl":  "",
+                                           "_id":  "68f25f01d65af4a7388900fc",
+                                           "title":  "ArechaNut Price Details",
+                                           "content":  "I Eaglry Waiting for Price Drop for the Deepawali",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+                                                            "68f25fa0d65af4a738890113"
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T15:21:37.686Z",
+                                           "updatedAt":  "2025-10-17T15:24:17.003Z",
+                                           "__v":  1,
+                                           "commentCount":  1,
+                                           "netVotes":  0,
+                                           "id":  "68f25f01d65af4a7388900fc"
+                                       }
+                                   ]
+                     }
+    },
+    {
+        "Test":  "Create Community Post",
+        "Status":  "FAIL",
+        "Error":  "The remote server returned an error: (500) Internal Server Error."
+    },
+    {
+        "Test":  "Chatbot: \u0027Hello, what can you help me with?\u0027",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "reply":  "I understand you might be frustrated. Let\u0027s focus on solving your farming needs! 👨‍🌾",
+                         "intent":  "smalltalk",
+                         "confidence":  1
+                     }
+    },
+    {
+        "Test":  "Chatbot: \u0027What crops should I grow in monsoon season?\u0027",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "reply":  "I\u0027m FarmBot, your AI farming assistant! I can help you with:\n    \n🌾 Crop recommendations\n🌤️ Weather information\n🌱 Soil analysis\n💰 Crop prices\n🐛 Disease detection\n📰 Agriculture news\n📍 Location services\n🌍 Translation\n\nWhat would you like to know?",
+                         "intent":  "fallback_ai",
+                         "confidence":  0
+                     }
+    },
+    {
+        "Test":  "Chatbot: \u0027Tell me about rice farming\u0027",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "reply":  "I\u0027m FarmBot, your AI farming assistant! I can help you with:\n    \n🌾 Crop recommendations\n🌤️ Weather information\n🌱 Soil analysis\n💰 Crop prices\n🐛 Disease detection\n📰 Agriculture news\n📍 Location services\n🌍 Translation\n\nWhat would you like to know?",
+                         "intent":  "fallback_ai",
+                         "confidence":  0
+                     }
+    },
+    {
+        "Test":  "Authenticated Chatbot Query",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "reply":  "I\u0027m FarmBot, your AI farming assistant! I can help you with:\n    \n🌾 Crop recommendations\n🌤️ Weather information\n🌱 Soil analysis\n💰 Crop prices\n🐛 Disease detection\n📰 Agriculture news\n📍 Location services\n🌍 Translation\n\nWhat would you like to know?",
+                         "intent":  "fallback_ai",
+                         "confidence":  0
+                     }
+    },
+    {
+        "Test":  "Invalid Login (Wrong Password)",
+        "Status":  "FAIL",
+        "Error":  "The remote server returned an error: (401) Unauthorized."
+    },
+    {
+        "Test":  "Duplicate Signup (Should Fail)",
+        "Status":  "FAIL",
+        "Error":  "The remote server returned an error: (400) Bad Request."
+    },
+    {
+        "Test":  "Signup Missing Fields",
+        "Status":  "FAIL",
+        "Error":  "The remote server returned an error: (400) Bad Request."
+    },
+    {
+        "Test":  "Unauthorized Community Access",
+        "Status":  "FAIL",
+        "Error":  "The remote server returned an error: (401) Unauthorized."
+    },
+    {
+        "Test":  "Invalid Token Access",
+        "Status":  "FAIL",
+        "Error":  "The remote server returned an error: (401) Unauthorized."
+    },
+    {
+        "Test":  "404 Route Test",
+        "Status":  "FAIL",
+        "Error":  "The remote server returned an error: (404) Not Found."
+    },
+    {
+        "Test":  "Real User Signup",
+        "Status":  "PASS",
+        "StatusCode":  201,
+        "Response":  {
+                         "success":  true,
+                         "token":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MjE4MTFhMTEwNTg0ZjRmODYzNzQzZSIsInVzZXJJZCI6IjY5MjE4MTFhMTEwNTg0ZjRmODYzNzQzZSIsImVtYWlsIjoiam9obi5mYXJtZXIxNzYzODAzNDE3QGV4YW1wbGUuY29tIiwiaWF0IjoxNzYzODAzNDE4LCJleHAiOjE3NjYzOTU0MTh9.QneoIExQGXNdb3hcNdR3BoFHWLVnfuVaFdMavJllAK8",
+                         "user":  {
+                                      "id":  "6921811a110584f4f863743e",
+                                      "name":  "John Farmer",
+                                      "email":  "john.farmer1763803417@example.com"
+                                  }
+                     }
+    },
+    {
+        "Test":  "Real User Login",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "token":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MjE4MTFhMTEwNTg0ZjRmODYzNzQzZSIsInVzZXJJZCI6IjY5MjE4MTFhMTEwNTg0ZjRmODYzNzQzZSIsImVtYWlsIjoiam9obi5mYXJtZXIxNzYzODAzNDE3QGV4YW1wbGUuY29tIiwiaWF0IjoxNzYzODAzNDE4LCJleHAiOjE3NjYzOTU0MTh9.QneoIExQGXNdb3hcNdR3BoFHWLVnfuVaFdMavJllAK8",
+                         "user":  {
+                                      "id":  "6921811a110584f4f863743e",
+                                      "name":  "John Farmer",
+                                      "email":  "john.farmer1763803417@example.com"
+                                  }
+                     }
+    },
+    {
+        "Test":  "User Checks Crops",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "results":  [
+                                         {
+                                             "_id":  "692094ba700f591d50c0725b",
+                                             "name":  "Maize (Corn)",
+                                             "score":  100,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "sandy",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  18,
+                                             "maxTemp":  32,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "20-28 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  1
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725e",
+                                             "name":  "Groundnut (Peanut)",
+                                             "score":  100,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "sandy",
+                                                                   "loam",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  30,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  1000,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "12-18 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  2
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725f",
+                                             "name":  "Soybean",
+                                             "score":  100,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "black",
+                                                                   "red",
+                                                                   "loam"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  30,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "10-15 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  3
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0726b",
+                                             "name":  "Turmeric",
+                                             "score":  88,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "red",
+                                                                   "clay"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  1500,
+                                             "maxRainfall":  2500,
+                                             "waterRequirement":  "High",
+                                             "yieldPotential":  "150-200 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  4
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07259",
+                                             "name":  "Rice (Paddy)",
+                                             "score":  87,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "clay",
+                                                                   "loam",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "summer"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  1000,
+                                             "maxRainfall":  2500,
+                                             "waterRequirement":  "High",
+                                             "yieldPotential":  "25-35 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  5
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0726a",
+                                             "name":  "Sugarcane",
+                                             "score":  87,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "black",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  1500,
+                                             "maxRainfall":  2500,
+                                             "waterRequirement":  "High",
+                                             "yieldPotential":  "300-400 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  6
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725a",
+                                             "name":  "Cotton",
+                                             "score":  84,
+                                             "reasons":  [
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "black",
+                                                                   "alluvial",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  21,
+                                             "maxTemp":  35,
+                                             "minRainfall":  600,
+                                             "maxRainfall":  1200,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "10-15 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  7
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c07260",
+                                             "name":  "Wheat",
+                                             "score":  84,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Temperature 25°C is optimal",
+                                                             "Rainfall requirement matches",
+                                                             "High market demand - profitable crop"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "clay",
+                                                                   "alluvial"
+                                                               ],
+                                             "seasons":  [
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  10,
+                                             "maxTemp":  25,
+                                             "minRainfall":  500,
+                                             "maxRainfall":  900,
+                                             "waterRequirement":  "Medium",
+                                             "yieldPotential":  "18-25 quintals/acre",
+                                             "marketDemand":  "High",
+                                             "rank":  8
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725c",
+                                             "name":  "Jowar (Sorghum)",
+                                             "score":  82,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "loam",
+                                                                   "red",
+                                                                   "black"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon",
+                                                             "winter"
+                                                         ],
+                                             "minTemp":  20,
+                                             "maxTemp":  35,
+                                             "minRainfall":  400,
+                                             "maxRainfall":  750,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "12-18 quintals/acre",
+                                             "marketDemand":  "Medium",
+                                             "rank":  9
+                                         },
+                                         {
+                                             "_id":  "692094ba700f591d50c0725d",
+                                             "name":  "Bajra (Pearl Millet)",
+                                             "score":  82,
+                                             "reasons":  [
+                                                             "Perfect match for loam soil",
+                                                             "Ideal for monsoon season",
+                                                             "Temperature 25°C is optimal"
+                                                         ],
+                                             "suitableSoils":  [
+                                                                   "sandy",
+                                                                   "loam",
+                                                                   "red"
+                                                               ],
+                                             "seasons":  [
+                                                             "monsoon"
+                                                         ],
+                                             "minTemp":  25,
+                                             "maxTemp":  38,
+                                             "minRainfall":  400,
+                                             "maxRainfall":  650,
+                                             "waterRequirement":  "Low",
+                                             "yieldPotential":  "8-12 quintals/acre",
+                                             "marketDemand":  "Medium",
+                                             "rank":  10
+                                         }
+                                     ],
+                         "conditions":  {
+                                            "soil":  "loam",
+                                            "season":  "monsoon",
+                                            "temperature":  25
+                                        }
+                     }
+    },
+    {
+        "Test":  "User Views Community",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "posts":  [
+                                       {
+                                           "_id":  "68f32dd0086b2c99e8adf079",
+                                           "title":  "blah blah blah w",
+                                           "content":  "Bjeb wejkd akjsd kwe",
+                                           "imageUrl":  "https://res.cloudinary.com/dy5532ghs/image/upload/v1760767441/farmhelp-posts/asv9da80ath5k5nqggtr.jpg",
+                                           "author":  {
+                                                          "_id":  "68f32daf086b2c99e8adf069",
+                                                          "email":  "iamla@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-18T06:04:00.815Z",
+                                           "updatedAt":  "2025-10-18T06:04:00.815Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f32dd0086b2c99e8adf079"
+                                       },
+                                       {
+                                           "_id":  "68f32dcd086b2c99e8adf075",
+                                           "title":  "blah blah blah w",
+                                           "content":  "Bjeb wejkd akjsd kwe",
+                                           "imageUrl":  "https://res.cloudinary.com/dy5532ghs/image/upload/v1760767437/farmhelp-posts/tvz99aloqp4aahdaadb8.jpg",
+                                           "author":  {
+                                                          "_id":  "68f32daf086b2c99e8adf069",
+                                                          "email":  "iamla@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-18T06:03:57.465Z",
+                                           "updatedAt":  "2025-10-18T06:03:57.465Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f32dcd086b2c99e8adf075"
+                                       },
+                                       {
+                                           "_id":  "68f275b2c3a726e73d88229e",
+                                           "title":  "Best Tasdasda",
+                                           "content":  "what to do asdasda",
+                                           "imageUrl":  "",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T16:58:26.736Z",
+                                           "updatedAt":  "2025-10-17T16:58:26.736Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f275b2c3a726e73d88229e"
+                                       },
+                                       {
+                                           "_id":  "68f275aec3a726e73d88229a",
+                                           "title":  "Best Tasdasda",
+                                           "content":  "what to do asdasda",
+                                           "imageUrl":  "",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T16:58:22.041Z",
+                                           "updatedAt":  "2025-10-17T16:58:22.041Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f275aec3a726e73d88229a"
+                                       },
+                                       {
+                                           "_id":  "68f27458c3a726e73d882288",
+                                           "title":  "Best Time to Plant theo",
+                                           "content":  "what to do",
+                                           "imageUrl":  "",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T16:52:40.714Z",
+                                           "updatedAt":  "2025-10-17T16:52:40.714Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f27458c3a726e73d882288"
+                                       },
+                                       {
+                                           "_id":  "68f271788722fdf1c98359cc",
+                                           "title":  "Best Time to Plant the TOmoto",
+                                           "content":  "what to do",
+                                           "imageUrl":  "",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T16:40:24.596Z",
+                                           "updatedAt":  "2025-10-17T16:40:24.596Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f271788722fdf1c98359cc"
+                                       },
+                                       {
+                                           "_id":  "68f269adacc89e9cc509082c",
+                                           "title":  "My Crop",
+                                           "content":  "Advice me",
+                                           "imageUrl":  "",
+                                           "author":  {
+                                                          "_id":  "68f268b2acc89e9cc509081b",
+                                                          "email":  "kushalrishik@gmai.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+                                                           "68eff982c303c4628ac4a066"
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T16:07:09.282Z",
+                                           "updatedAt":  "2025-10-17T16:39:44.231Z",
+                                           "__v":  3,
+                                           "commentCount":  0,
+                                           "netVotes":  1,
+                                           "id":  "68f269adacc89e9cc509082c"
+                                       },
+                                       {
+                                           "_id":  "68f269aaacc89e9cc5090828",
+                                           "title":  "My Crop",
+                                           "content":  "Advice me",
+                                           "imageUrl":  "",
+                                           "author":  {
+                                                          "_id":  "68f268b2acc89e9cc509081b",
+                                                          "email":  "kushalrishik@gmai.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T16:07:06.983Z",
+                                           "updatedAt":  "2025-10-17T16:07:06.983Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f269aaacc89e9cc5090828"
+                                       },
+                                       {
+                                           "imageUrl":  "",
+                                           "_id":  "68f26251bc0fc9a5c68f639e",
+                                           "title":  "kjsjgajs",
+                                           "content":  "asdfjkasbdfljasdfhlkjdsfl",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T15:35:45.578Z",
+                                           "updatedAt":  "2025-10-17T15:35:45.578Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f26251bc0fc9a5c68f639e"
+                                       },
+                                       {
+                                           "imageUrl":  "",
+                                           "_id":  "68f25f09d65af4a738890108",
+                                           "title":  "ArechaNut Price Details",
+                                           "content":  "I Eaglry Waiting for Price Drop for the Deepawali",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T15:21:45.616Z",
+                                           "updatedAt":  "2025-10-17T15:21:45.616Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f25f09d65af4a738890108"
+                                       },
+                                       {
+                                           "imageUrl":  "",
+                                           "_id":  "68f25f09d65af4a738890104",
+                                           "title":  "ArechaNut Price Details",
+                                           "content":  "I Eaglry Waiting for Price Drop for the Deepawali",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T15:21:45.023Z",
+                                           "updatedAt":  "2025-10-17T15:21:45.023Z",
+                                           "__v":  0,
+                                           "commentCount":  0,
+                                           "netVotes":  0,
+                                           "id":  "68f25f09d65af4a738890104"
+                                       },
+                                       {
+                                           "_id":  "68f25f05d65af4a738890100",
+                                           "title":  "ArechaNut Price Details",
+                                           "content":  "I Eaglry Waiting for Price Drop for the Deepawali",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+
+                                                        ],
+                                           "upvotes":  [
+                                                           "68eff982c303c4628ac4a066",
+                                                           "68eff982c303c4628ac4a066"
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T15:21:41.175Z",
+                                           "updatedAt":  "2025-10-17T16:48:50.678Z",
+                                           "__v":  2,
+                                           "imageUrl":  "",
+                                           "commentCount":  0,
+                                           "netVotes":  2,
+                                           "id":  "68f25f05d65af4a738890100"
+                                       },
+                                       {
+                                           "imageUrl":  "",
+                                           "_id":  "68f25f01d65af4a7388900fc",
+                                           "title":  "ArechaNut Price Details",
+                                           "content":  "I Eaglry Waiting for Price Drop for the Deepawali",
+                                           "author":  {
+                                                          "_id":  "68eff982c303c4628ac4a066",
+                                                          "email":  "kushal@gmail.com"
+                                                      },
+                                           "comments":  [
+                                                            "68f25fa0d65af4a738890113"
+                                                        ],
+                                           "upvotes":  [
+
+                                                       ],
+                                           "downvotes":  [
+
+                                                         ],
+                                           "createdAt":  "2025-10-17T15:21:37.686Z",
+                                           "updatedAt":  "2025-10-17T15:24:17.003Z",
+                                           "__v":  1,
+                                           "commentCount":  1,
+                                           "netVotes":  0,
+                                           "id":  "68f25f01d65af4a7388900fc"
+                                       }
+                                   ]
+                     }
+    },
+    {
+        "Test":  "User Creates Post",
+        "Status":  "FAIL",
+        "Error":  "The remote server returned an error: (500) Internal Server Error."
+    },
+    {
+        "Test":  "User Asks Chatbot",
+        "Status":  "PASS",
+        "StatusCode":  200,
+        "Response":  {
+                         "success":  true,
+                         "reply":  "I\u0027m FarmBot, your AI farming assistant! I can help you with:\n    \n🌾 Crop recommendations\n🌤️ Weather information\n🌱 Soil analysis\n💰 Crop prices\n🐛 Disease detection\n📰 Agriculture news\n📍 Location services\n🌍 Translation\n\nWhat would you like to know?",
+                         "intent":  "fallback_ai",
+                         "confidence":  0
+                     }
+    }
+]

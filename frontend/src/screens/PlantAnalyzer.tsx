@@ -4,6 +4,7 @@ import { Button, Text, ActivityIndicator, Card, Surface, Chip, Snackbar } from '
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import api from '../services/api';
+import { sanitizeImageUri } from '../utils/uriValidation';
 
 // Import safe navigation hook
 import { useSafeGoBack } from '../navigation/AppNavigator';
@@ -327,7 +328,7 @@ export default function PlantAnalyzer(): JSX.Element {
 
       {image && (
         <Card style={styles.imageCard}>
-          <Image source={{ uri: image.uri }} style={styles.image} />
+          <Image source={{ uri: sanitizeImageUri(image.uri, '') }} style={styles.image} />
           <Card.Actions>
             <Button onPress={() => { setImage(null); setResult(null); }}>Remove</Button>
             <Button 

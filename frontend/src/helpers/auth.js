@@ -2,9 +2,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const JWT_KEY = 'userJwt';
 
-// Test token for development
-const TEST_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY1NGFiYzEyMzQ1Njc4OTBhYmNkZWYwMSIsInBob25lIjoiOTk5OTk5OTk5OSIsIm5hbWUiOiJUZXN0IEZhcm1lciIsImlhdCI6MTcwMDAwMDAwMCwiZXhwIjoyMDAwMDAwMDAwfQ.test-signature';
-
 export async function getJwt() {
   try {
     // Try to get stored JWT
@@ -14,13 +11,12 @@ export async function getJwt() {
       return token;
     }
 
-    // For development, use test token
-    console.log('[AUTH] Using test JWT for development');
-    await AsyncStorage.setItem(JWT_KEY, TEST_TOKEN);
-    return TEST_TOKEN;
+    // No token found - user must login
+    console.log('[AUTH] No JWT found - user must login');
+    return null;
   } catch (error) {
     console.error('[AUTH] Error getting JWT:', error);
-    return TEST_TOKEN; // Fallback to test token
+    return null;
   }
 }
 

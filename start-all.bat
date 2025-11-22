@@ -19,14 +19,14 @@ echo.
 
 REM Start Backend (Node.js Express - Port 4000)
 echo [2/4] Starting Backend Server (Port 4000)...
-start "FarmHelp Backend" cmd /k "cd backend && npm start"
+start "FarmHelp Backend" cmd /k "cd backend && node src/server-production.js"
 timeout /t 3 /nobreak >nul
 echo    Backend starting...
 echo.
 
 REM Start ML Service (Flask - Port 5000)
 echo [3/4] Starting ML Service (Port 5000)...
-start "FarmHelp ML Service" cmd /k "cd model-service && python app.py"
+start "FarmHelp ML Service" cmd /k "cd model-service && python app_simple.py"
 timeout /t 3 /nobreak >nul
 echo    ML Service starting...
 echo.

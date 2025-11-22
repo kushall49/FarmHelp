@@ -1,7 +1,22 @@
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
+const path = require('path');
 const PlantAnalysis = require('../models/PlantAnalysis');
+
+// Safe path utilities to prevent path traversal
+function sanitizePath(filePath) {
+  const normalized = path.normalize(filePath).replace(/^(\.\.([\/\\]|$))+/, '');
+  const uploadDir = path.join(__dirname, '../../uploads');
+  const resolved = path.resolve(uploadDir, normalized);
+  
+  // Ensure the resolved path is within uploadDir
+  if (!resolved.startsWith(uploadDir)) {
+    throw new Error('Invalid file path - path traversal detected');
+  }
+  
+  return resolved;
+}
 
 // Flask service configuration
 const FLASK_SERVICE_URL = process.env.FLASK_SERVICE_URL || 'http://localhost:5000';
@@ -21,9 +36,12 @@ async function callFlaskService(imagePath, retryCount = 0) {
   try {
     console.log(`[Flask Service] Attempt ${retryCount + 1}/${MAX_RETRIES + 1}`);
     
+    // Sanitize path to prevent traversal
+    const safePath = sanitizePath(imagePath);
+    
     // Create form data with image file
     const formData = new FormData();
-    formData.append('image', fs.createReadStream(imagePath));
+    formData.append('image', fs.createReadStream(safePath));
 
     // Make request to Flask service
     const response = await axios.post(
@@ -267,7 +285,8 @@ exports.analyzePlant = async (req, res) => {
     // Clean up uploaded file if needed
     if (req.file && req.file.path && !req.file.path.includes('cloudinary')) {
       try {
-        fs.unlinkSync(req.file.path);
+        const safeCleanupPath = sanitizePath(req.file.path);
+        fs.unlinkSync(safeCleanupPath);
         console.log(`[Cleanup] Removed temporary file: ${req.file.path}`);
       } catch (err) {
         console.error(`[Cleanup] Failed to remove file:`, err.message);

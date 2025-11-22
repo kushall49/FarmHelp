@@ -4,6 +4,9 @@ dist
 .expo
 *.log
 
+# TestSpirit automated debugging output
+.testspirit_output.json
+
 # Snyk Security Extension - AI Rules (auto-generated)
 .github\instructions\snyk_rules.instructions.md
 
