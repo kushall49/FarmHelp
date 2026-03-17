@@ -16,9 +16,12 @@ export interface AuthUser {
   phone: string;
   email?: string;
   state?: string;
-  isVerifiedFarmer: boolean;
+  isVerifiedFarmer?: boolean;
+  isVerifiedProvider?: boolean;
   avatar?: string;
   bio?: string;
+  farmSize?: number;
+  createdAt?: string;
 }
 
 export interface AuthState {

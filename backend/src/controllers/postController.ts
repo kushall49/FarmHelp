@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import Post from '../models/postModel';
-import Comment from '../models/commentModel';
+import Post from '../models/Post';
+import Comment from '../models/Comment';
 
 // @desc    Get all posts
 // @route   GET /api/posts

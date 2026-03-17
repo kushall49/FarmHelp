@@ -30,7 +30,7 @@ interface MenuItem {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function Profile(): React.JSX.Element {
+export default function Profile(): JSX.Element {
   const navigation = useNavigation<any>();
   const { state, logout } = useAuth();
   const user = state.user;

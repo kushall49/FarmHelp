@@ -132,8 +132,8 @@ export default function LocationCropRecommendation() {
         long: locationData.longitude,
       });
 
-      setEnvironmentalData(response.data.environmental);
-      setRecommendations(response.data.recommendations);
+      setEnvironmentalData(response.environmental);
+      setRecommendations(response.recommendations);
       
     } catch (error: any) {
       console.error('Crop recommendation error:', error);

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 
 import HomeScreen from '../screens/HomeScreen';
 import CommunityScreen from '../screens/CommunityScreen';
@@ -11,7 +12,16 @@ import PlantAnalyzer from '../screens/PlantAnalyzer';
 import CropRecommendation from '../screens/CropRecommendation';
 import Chatbot from '../screens/Chatbot';
 import PostDetailScreen from '../screens/PostDetailScreen';
-import CreateListing from '../screens/CreateListing';
+import CreateListingScreen from '../screens/CreateListingScreen';
+
+export function useSafeGoBack() {
+  const navigation = useNavigation();
+  return () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    }
+  };
+}
 
 export type RootStackParamList = {
   MainTabs: undefined;
@@ -110,7 +120,7 @@ export default function AppNavigator() {
       <Stack.Screen name="CropRecommendation" component={CropRecommendation} />
       <Stack.Screen name="Chatbot" component={Chatbot} />
       <Stack.Screen name="PostDetail" component={PostDetailScreen} />
-      <Stack.Screen name="CreateListing" component={CreateListing} />
+      <Stack.Screen name="CreateListing" component={CreateListingScreen} />
     </Stack.Navigator>
   );
 }

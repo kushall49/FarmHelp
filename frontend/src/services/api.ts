@@ -136,8 +136,7 @@ client.interceptors.request.use(
   async (config) => {
     const token = await AuthStorage.getToken();
     if (token) {
-      config.headers = config.headers ?? {};
-      config.headers.Authorization = `Bearer ${token}`;
+      (config.headers as any).Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -412,6 +411,82 @@ export const api = {
       client.get<{ success: boolean; weather: WeatherData }>('/weather', {
         params: { lat, lon },
       }),
+    );
+  },
+
+  // ---- Jobs ----------------------------------------------------------------
+
+  createJobRequest(data: {
+    serviceNeeded: string;
+    title: string;
+    description: string;
+    district: string;
+    taluk: string;
+    village?: string;
+    phoneNumber: string;
+    dateNeeded: string;
+    budgetMin?: number;
+    budgetMax?: number;
+  }): Promise<{ success: boolean; job: any }> {
+    return request(
+      client.post<{ success: boolean; job: any }>('/jobs', data),
+    );
+  },
+
+  getJobById(jobId: string): Promise<{ success: boolean; data: any }> {
+    return request(
+      client.get<{ success: boolean; data: any }>(`/jobs/${jobId}`),
+    );
+  },
+
+  trackResponse(jobId: string): Promise<{ success: boolean }> {
+    return request(
+      client.post<{ success: boolean }>(`/jobs/${jobId}/track-response`),
+    );
+  },
+
+  // ---- Service Listings ----------------------------------------------------
+
+  createServiceListing(data: any): Promise<{ success: boolean; listing: any }> {
+    return request(
+      client.post<{ success: boolean; listing: any }>('/services', data),
+    );
+  },
+
+  getServiceById(serviceId: string): Promise<{ success: boolean; data: any }> {
+    return request(
+      client.get<{ success: boolean; data: any }>(`/services/${serviceId}`),
+    );
+  },
+
+  trackCall(serviceId: string): Promise<{ success: boolean }> {
+    return request(
+      client.post<{ success: boolean }>(`/services/${serviceId}/track-call`),
+    );
+  },
+
+  // ---- Location-based Crops ------------------------------------------------
+
+  getLocationBasedCrops(params: {
+    lat: number;
+    long: number;
+  }): Promise<{ success: boolean; recommendations: any[]; environmental: any }> {
+    return request(
+      client.get<{ success: boolean; recommendations: any[]; environmental: any }>(
+        '/crops/location',
+        { params },
+      ),
+    );
+  },
+
+  // ---- Ratings -------------------------------------------------------------
+
+  rateProvider(
+    providerId: string,
+    data: { rating: number; comment?: string },
+  ): Promise<{ success: boolean }> {
+    return request(
+      client.post<{ success: boolean }>(`/users/rate/${providerId}`, data),
     );
   },
 };

@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { AuthUser } from './api';
 
 const TOKEN_KEY = 'farmhelp_token';
 const USER_KEY = 'farmhelp_user';
@@ -16,11 +17,11 @@ export const AuthStorage = {
     await AsyncStorage.removeItem(TOKEN_KEY);
   },
 
-  async saveUser(user: object): Promise<void> {
+  async saveUser(user: AuthUser): Promise<void> {
     await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
   },
 
-  async getUser(): Promise<object | null> {
+  async getUser(): Promise<AuthUser | null> {
     const raw = await AsyncStorage.getItem(USER_KEY);
     return raw ? JSON.parse(raw) : null;
   },

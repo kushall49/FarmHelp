@@ -59,7 +59,7 @@ const INDIAN_DISTRICTS: string[] = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function ServicesHomeScreen(): React.JSX.Element {
+export default function ServicesHomeScreen(): JSX.Element {
   const navigation = useNavigation<any>();
   const { state: authState } = useAuth();
 
@@ -177,7 +177,7 @@ export default function ServicesHomeScreen(): React.JSX.Element {
   // ── Render helpers ─────────────────────────────────────────────────────────
 
   const renderServiceItem = useCallback(
-    ({ item }: { item: ServiceListing }): React.JSX.Element => (
+    ({ item }: { item: ServiceListing }): JSX.Element => (
       <ServiceCard
         service={item}
         onPress={() =>
@@ -193,7 +193,7 @@ export default function ServicesHomeScreen(): React.JSX.Element {
     item,
   }: {
     item: string;
-  }): React.JSX.Element => {
+  }): JSX.Element => {
     const isSelected = selectedDistrict === item;
     return (
       <TouchableOpacity
