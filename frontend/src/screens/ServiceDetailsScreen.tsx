@@ -19,7 +19,7 @@ export default function ServiceDetailsScreen({ route, navigation }: any) {
   const fetchService = async () => {
     try {
       const response = await api.getServiceById(serviceId);
-      setService(response.data.data);
+      setService(response.data);
     } catch (error) {
       console.error('Fetch service error:', error);
       Alert.alert('Error', 'Failed to load service details');

@@ -1,34 +1,22 @@
-/**
- * FarmHelp App - Entry Point
- * 
- * Navigation architecture has been completely rebuilt with:
- * - Root Stack (Auth + MainTabs)
- * - Tab Navigator (Home, Community, Services, Profile)
- * - Feature screens with headers and back buttons
- * - Android hardware back button support
- * - Deep link fallback protection
- */
-
-import React, { useRef } from 'react';
-import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
-import { Provider as PaperProvider } from 'react-native-paper';
-
-// Import new navigation architecture
-import AppNavigator, { useAndroidBackHandler } from './src/navigation/AppNavigator';
-import type { RootStackParamList } from './src/navigation/navigationTypes';
+import React from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider } from './src/context/AuthContext';
+import { AppProvider } from './src/context/AppContext';
+import RootNavigator from './src/navigation/RootNavigator';
 
 export default function App() {
-  // Reference to navigation for Android back button handler
-  const navigationRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
-
-  // Setup Android hardware back button handler
-  useAndroidBackHandler(navigationRef);
-
   return (
-    <PaperProvider>
-      <NavigationContainer ref={navigationRef}>
-        <AppNavigator />
-      </NavigationContainer>
-    </PaperProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <AppProvider>
+          <NavigationContainer>
+            <StatusBar style="light" />
+            <RootNavigator />
+          </NavigationContainer>
+        </AppProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

@@ -19,7 +19,7 @@ export default function JobDetailsScreen({ route, navigation }: any) {
   const fetchJob = async () => {
     try {
       const response = await api.getJobById(jobId);
-      setJob(response.data.data);
+      setJob(response.data);
     } catch (error) {
       console.error('Fetch job error:', error);
       Alert.alert('Error', 'Failed to load job details');

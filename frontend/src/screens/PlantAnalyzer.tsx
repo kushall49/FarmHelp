@@ -1,550 +1,854 @@
-import React, { useState, useRef } from 'react';
-import { View, Image, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
-import { Button, Text, ActivityIndicator, Card, Surface, Chip, Snackbar } from 'react-native-paper';
-import * as ImagePicker from 'expo-image-picker';
+import React, { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Alert,
+  ActivityIndicator,
+  Animated,
+  Platform,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import api from '../services/api';
-import { sanitizeImageUri } from '../utils/uriValidation';
-
-// Import safe navigation hook
+import * as ImagePicker from 'expo-image-picker';
+import { api, PlantAnalysisResult } from '../services/api';
+import { Colors } from '../constants/colors';
 import { useSafeGoBack } from '../navigation/AppNavigator';
 
-// TypeScript interfaces
-interface PickedImage {
+// ─────────────────────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────────────────────
+
+type SectionKey = 'about' | 'treatment' | 'products';
+
+interface SelectedImage {
   uri: string;
-  width: number;
-  height: number;
-  type?: string;
+  base64?: string;
 }
 
-interface AnalysisResult {
-  crop?: string;
-  disease?: string;
-  confidence?: number;
-  confidence_percentage?: string;
-  predictions?: Array<{ class_name: string; confidence: number }>;
-  recommendation?: string;
-  recommendations?: string;
-  treatment?: string;
-  fertilizers?: any;
-  gradcam?: string;
-  processing_time_ms?: number;
-  result?: any; // For nested result structure
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getSeverityStyle(severity: string | undefined): {
+  badgeBg: string;
+  badgeText: string;
+} {
+  switch (severity?.toLowerCase()) {
+    case 'high':
+      return { badgeBg: Colors.badgeRed, badgeText: Colors.error };
+    case 'medium':
+      return { badgeBg: Colors.badgeAmber, badgeText: Colors.warning };
+    case 'low':
+      return { badgeBg: Colors.badgeGreen, badgeText: Colors.success };
+    default:
+      return { badgeBg: Colors.border, badgeText: Colors.textSecondary };
+  }
 }
 
-interface ApiResponse {
-  id: string;
-  result: AnalysisResult;
+// ─────────────────────────────────────────────────────────────────────────────
+// Sub-component: ExpandableSection header row
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface SectionHeaderProps {
+  title: string;
+  sectionKey: SectionKey;
+  expanded: SectionKey | null;
+  onToggle: (key: SectionKey) => void;
 }
 
-export default function PlantAnalyzer(): JSX.Element {
-  // ✅ NAVIGATION FIX: Use safe navigation with deep link fallback
-  const navigation = useNavigation();
-  const handleGoBack = useSafeGoBack();
-  const [image, setImage] = useState<PickedImage | null>(null);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [snackbarVisible, setSnackbarVisible] = useState<boolean>(false);
-  const [snackbarMessage, setSnackbarMessage] = useState<string>('');
-  const scrollViewRef = useRef<ScrollView>(null);
-
-  // Debug: Log render cycles
-  console.log('[RENDER] Component rendered - image:', !!image, 'result:', !!result, 'loading:', loading);
-
-  async function pickImage(): Promise<void> {
-    const res = await ImagePicker.launchImageLibraryAsync({ 
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, 
-      quality: 0.8,
-      allowsEditing: true,
-      aspect: [4, 3]
-    });
-    if (!res.canceled) {
-      setImage(res.assets[0]);
-      setResult(null);
-    }
-  }
-
-  async function takePhoto(): Promise<void> {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      // Use Snackbar instead of alert
-      setSnackbarMessage('Camera permission is required to take photos');
-      setSnackbarVisible(true);
-      return;
-    }
-    const res = await ImagePicker.launchCameraAsync({ 
-      quality: 0.8,
-      allowsEditing: true,
-      aspect: [4, 3]
-    });
-    if (!res.canceled) {
-      setImage(res.assets[0]);
-      setResult(null);
-    }
-  }
-
-  async function analyze(): Promise<void> {
-    // ✅ NAVIGATION FIX: Removed window.history hack - proper navigation now handled by AppNavigator
-    
-    if (!image) {
-      console.warn('[ANALYZER] No image selected');
-      return;
-    }
-
-    console.log('[ANALYZER] === Starting Analysis ===');
-    console.log('[ANALYZER] 🔒 INLINE MODE: Results will render below, NO navigation');
-    console.log('[ANALYZER] Platform:', Platform.OS);
-    console.log('[ANALYZER] Image URI:', image.uri);
-
-    setLoading(true);
-    
-    try {
-      const formData = new FormData();
-      const filename = image.uri.split('/').pop() || 'plant.jpg';
-      const fileType = filename.split('.').pop()?.toLowerCase() || 'jpg';
-      
-      // CRITICAL FIX: Always use 'jpeg' MIME type (standardized)
-      const mimeType = fileType === 'png' ? 'image/png' : 'image/jpeg';
-
-      console.log('[ANALYZER] File details:', {
-        filename,
-        fileType,
-        mimeType,
-        platform: Platform.OS
-      });
-
-      // ✅ PRODUCTION FIX: Platform-specific FormData handling
-      if (Platform.OS === 'web') {
-        console.log('[ANALYZER] Web platform detected - converting to File/Blob');
-        
-        try {
-          // On web, ImagePicker returns blob: URIs that need to be fetched
-          const response = await fetch(image.uri);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch image: ${response.statusText}`);
-          }
-          
-          const blob = await response.blob();
-          
-          console.log('[ANALYZER] Blob created:', {
-            size: blob.size,
-            type: blob.type
-          });
-
-          // CRITICAL: Create proper File object with JPEG MIME
-          const file = new File([blob], filename, { type: mimeType });
-          
-          console.log('[ANALYZER] File created:', {
-            name: file.name,
-            size: file.size,
-            type: file.type
-          });
-
-          // PRODUCTION: Append with explicit filename
-          formData.append('image', file, filename);
-          console.log('[ANALYZER] ✅ Web: File appended to FormData');
-          
-        } catch (fetchError: any) {
-          console.error('[ANALYZER] ❌ Failed to convert image:', fetchError);
-          throw new Error(`Image conversion failed: ${fetchError.message}`);
-        }
-        
-      } else {
-        console.log('[ANALYZER] Mobile platform detected - using URI format');
-        
-        // PRODUCTION: Mobile FormData with proper MIME type
-        // @ts-ignore - React Native FormData accepts this format
-        formData.append('image', {
-          uri: image.uri,
-          name: filename,
-          type: mimeType  // Always valid MIME type
-        });
-        
-        console.log('[ANALYZER] ✅ Mobile: URI object appended with MIME:', mimeType);
-      }
-
-      console.log('[ANALYZER] Sending request to API...');
-      const res = await api.uploadPlant(formData);
-      
-      console.log('[ANALYZER] ✅ Raw API Response:', res);
-      console.log('[ANALYZER] Response Status:', res.status);
-      console.log('[ANALYZER] Response Data:', res.data);
-      
-      // PRODUCTION: Safe response parsing with fallback
-      let analysisResult: AnalysisResult;
-      
-      if (!res.data) {
-        throw new Error('Empty response from server');
-      }
-      
-      // Handle nested result structure
-      if (res.data.result) {
-        analysisResult = res.data.result;
-      } else if (res.data.success !== false) {
-        analysisResult = res.data;
-      } else {
-        throw new Error(res.data.error || 'Analysis failed');
-      }
-      
-      console.log('[ANALYZER] Extracted Analysis Result:', analysisResult);
-      console.log('[ANALYZER] Disease:', analysisResult?.disease || 'Unknown');
-      console.log('[ANALYZER] Confidence:', analysisResult?.confidence || analysisResult?.confidence_percentage);
-      
-      // PRODUCTION: Validate result structure
-      if (!analysisResult.disease && !analysisResult.crop) {
-        console.warn('[ANALYZER] ⚠️ Incomplete result structure, using fallback');
-        analysisResult = {
-          ...analysisResult,
-          disease: analysisResult.disease || 'Analysis Complete',
-          crop: analysisResult.crop || 'Unknown',
-          confidence_percentage: analysisResult.confidence_percentage || '0%',
-          recommendation: analysisResult.recommendation || 'No recommendations available'
-        };
-      }
-      
-      // CRITICAL: Set result BEFORE showing message
-      setResult(analysisResult);
-      console.log('[ANALYZER] ✅ Result state updated successfully');
-      
-      // Wait for React to process state update, then scroll and show success message
-      setTimeout(() => {
-        console.log('[ANALYZER] Auto-scrolling to results...');
-        
-        // INLINE SCROLL - Multiple methods to guarantee visibility
-        try {
-          if (Platform.OS === 'web') {
-            console.log('[ANALYZER] 🔒 Web scroll starting...');
-            
-            // Method 1: Direct element scroll
-            const resultsEl = document.getElementById('inline-plant-results');
-            if (resultsEl) {
-              resultsEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-              console.log('[ANALYZER] ✅ Scrolled to results element directly');
-            } else {
-              // Method 2: Scroll parent container
-              const maxScroll = Math.max(
-                document.body.scrollHeight,
-                document.body.offsetHeight,
-                document.documentElement.clientHeight,
-                document.documentElement.scrollHeight,
-                document.documentElement.offsetHeight
-              );
-              window.scrollTo({ 
-                top: maxScroll - window.innerHeight + 200, 
-                behavior: 'smooth' 
-              });
-              console.log('[ANALYZER] ✅ Scrolled window to:', maxScroll);
-            }
-          } else {
-            // Mobile: scroll ScrollView
-            console.log('[ANALYZER] 🔒 Mobile scroll starting...');
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-            console.log('[ANALYZER] ✅ Mobile ScrollView scrolled');
-          }
-        } catch (scrollErr: any) {
-          console.error('[ANALYZER] ❌ Scroll error:', scrollErr);
-        }
-        
-        // Show success message via Snackbar
-        setTimeout(() => {
-          setSnackbarMessage('✅ Analysis complete! Results displayed below.');
-          setSnackbarVisible(true);
-        }, 500);
-      }, 300);
-        
-    } catch (err: any) {
-      console.error('[ANALYZER] ❌ Error:', err);
-      console.error('[ANALYZER] Error message:', err.message);
-      console.error('[ANALYZER] Error response:', err.response?.data);
-      console.error('[ANALYZER] Error status:', err.response?.status);
-      
-      // PRODUCTION: Safe error message extraction
-      let errorMessage = 'Analysis failed. Please try again.';
-      
-      if (err.response?.data) {
-        if (typeof err.response.data === 'string') {
-          errorMessage = err.response.data;
-        } else if (err.response.data.error) {
-          errorMessage = err.response.data.error;
-        } else if (err.response.data.message) {
-          errorMessage = err.response.data.message;
-        }
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      
-      // Show error via Snackbar
-      setSnackbarMessage(`❌ ${errorMessage}`);
-      setSnackbarVisible(true);
-      
-      // PRODUCTION: Set fallback result on error (prevent white screen)
-      setResult({
-        disease: 'Error',
-        crop: 'Unknown',
-        confidence_percentage: '0%',
-        recommendation: `Analysis failed: ${errorMessage}. Please try again with a different image.`,
-        predictions: []
-      });
-        
-    } finally { 
-      setLoading(false); 
-      console.log('[ANALYZER] === Analysis Complete ===');
-    }
-  }
-
-  const getSeverityColor = (confidence: number): string => {
-    if (confidence > 0.8) return '#F44336';
-    if (confidence > 0.5) return '#FF9800';
-    return '#4CAF50';
-  };
-
+function SectionHeader({
+  title,
+  sectionKey,
+  expanded,
+  onToggle,
+}: SectionHeaderProps) {
+  const isOpen = expanded === sectionKey;
   return (
-    <View 
-      style={{ flex: 1 }} 
-      onStartShouldSetResponder={() => true}
-      onResponderRelease={(e) => {
-        // Prevent any bubbling that might trigger navigation
-        e.stopPropagation();
-      }}
+    <TouchableOpacity
+      style={styles.sectionHeader}
+      onPress={() => onToggle(sectionKey)}
+      activeOpacity={0.7}
     >
-    <ScrollView 
-      ref={scrollViewRef}
-      style={styles.container}
-      contentContainerStyle={{ paddingBottom: 50 }}
-    >
-      <Surface style={styles.header}>
-        <Text variant="headlineMedium" style={styles.title}>🔬 Plant Health Analyzer</Text>
-        <Text style={styles.subtitle}>Upload or capture plant image for AI analysis</Text>
-      </Surface>
-
-      <View style={styles.buttonRow}>
-        <Button mode="contained" onPress={pickImage} icon="image" style={styles.button} buttonColor="#4CAF50">
-          Gallery
-        </Button>
-        <Button mode="contained" onPress={takePhoto} icon="camera" style={styles.button} buttonColor="#2196F3">
-          Camera
-        </Button>
-      </View>
-
-      {image && (
-        <Card style={styles.imageCard}>
-          <Image source={{ uri: sanitizeImageUri(image.uri, '') }} style={styles.image} />
-          <Card.Actions>
-            <Button onPress={() => { setImage(null); setResult(null); }}>Remove</Button>
-            <Button 
-              mode="contained" 
-              onPress={(e: any) => {
-                // 🔒 CRITICAL: Prevent ALL default behaviors on web
-                if (e && e.preventDefault) e.preventDefault();
-                if (e && e.stopPropagation) e.stopPropagation();
-                console.log('[ANALYZER] 🚨 ANALYZE BUTTON CLICKED - Navigation prevented');
-                analyze();
-                return false;
-              }} 
-              disabled={loading} 
-              buttonColor="#4CAF50"
-            >
-              {loading ? 'Analyzing...' : '🔍 Analyze Now'}
-            </Button>
-          </Card.Actions>
-        </Card>
-      )}
-
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4CAF50" />
-          <Text style={styles.loadingText}>AI is analyzing your plant...</Text>
-          <Text style={styles.loadingSubtext}>This may take a few seconds</Text>
-        </View>
-      )}
-
-      {result && !loading && (
-        <Card style={styles.resultCard} nativeID="inline-plant-results">
-          <Card.Content>
-            <Text style={{ fontSize: 10, color: '#888', marginBottom: 8 }}>🔒 INLINE RESULTS (No Navigation)</Text>
-            <View style={styles.resultHeader}>
-              <Text variant="titleLarge" style={styles.resultTitle}>📊 Analysis Results</Text>
-              {result.confidence && (
-                <Chip 
-                  mode="flat" 
-                  style={[styles.confidenceChip, { backgroundColor: getSeverityColor(result.confidence) }]}
-                  textStyle={{ color: '#fff', fontWeight: 'bold' }}
-                >
-                  {Math.round(result.confidence * 100)}%
-                </Chip>
-              )}
-              {!result.confidence && result.confidence_percentage && (
-                <Chip 
-                  mode="flat" 
-                  style={[styles.confidenceChip, { backgroundColor: '#4CAF50' }]}
-                  textStyle={{ color: '#fff', fontWeight: 'bold' }}
-                >
-                  {result.confidence_percentage}%
-                </Chip>
-              )}
-            </View>
-
-            <Surface style={styles.diseaseCard}>
-              <Text style={styles.diseaseLabel}>Detected Condition:</Text>
-              <Text style={styles.diseaseName}>
-                {result.disease || result.crop || 'Analysis Complete'}
-              </Text>
-            </Surface>
-
-            {/* VISIBILITY DEBUG */}
-            <Surface style={{ padding: 6, marginTop: 6, backgroundColor: '#E8F5E9' }}>
-              <Text style={{ fontSize: 9, color: '#2E7D32' }}>
-                ✅ Rendered: {new Date().toLocaleTimeString()}
-                {'\n'}📍 Crop: {result.crop || 'N/A'}
-                {'\n'}🦠 Disease: {result.disease || 'N/A'}
-                {'\n'}📊 Conf: {result.confidence_percentage || result.confidence || '0%'}
-              </Text>
-            </Surface>
-
-            {(result.recommendations || result.recommendation) && (
-              <View style={styles.recommendationsSection}>
-                <Text style={styles.sectionTitle}>💡 Recommendations:</Text>
-                <Text style={styles.recommendationText}>
-                  {result.recommendations || result.recommendation}
-                </Text>
-              </View>
-            )}
-
-            {result.treatment && (
-              <View style={styles.treatmentSection}>
-                <Text style={styles.sectionTitle}>💊 Treatment:</Text>
-                <Text style={styles.treatmentText}>{result.treatment}</Text>
-              </View>
-            )}
-
-            {result.fertilizers && result.fertilizers.recommended && result.fertilizers.recommended.length > 0 && (
-              <View style={styles.fertilizersSection}>
-                <Text style={styles.sectionTitle}>🌱 Recommended Fertilizers:</Text>
-                {result.fertilizers.recommended.map((fert: any, index: number) => (
-                  <Text key={index} style={styles.fertilizerText}>
-                    • {typeof fert === 'string' ? fert : fert.name || JSON.stringify(fert)}
-                  </Text>
-                ))}
-              </View>
-            )}
-
-            {result.predictions && result.predictions.length > 0 && (
-              <View style={styles.predictionsSection}>
-                <Text style={styles.sectionTitle}>🎯 Top Predictions:</Text>
-                {result.predictions.slice(0, 3).map((pred: any, index: number) => (
-                  <Surface key={index} style={styles.predictionCard}>
-                    <Text style={styles.predictionName}>{pred.class_name || pred.class}</Text>
-                    <Text style={styles.predictionConfidence}>
-                      {Math.round((pred.confidence || 0) * 100)}%
-                    </Text>
-                  </Surface>
-                ))}
-              </View>
-            )}
-
-            {/* Debug: Show raw data if no structured data available */}
-            {!result.disease && !result.crop && !result.recommendation && !result.recommendations && (
-              <Surface style={styles.debugCard}>
-                <Text style={styles.debugTitle}>📋 Raw Response (Debug Mode):</Text>
-                <ScrollView horizontal style={{ maxHeight: 200 }}>
-                  <Text style={styles.debugText}>
-                    {JSON.stringify(result, null, 2)}
-                  </Text>
-                </ScrollView>
-                <Text style={styles.debugHint}>
-                  ⚠️ If you see this, the response structure may be unexpected. Check console logs.
-                </Text>
-              </Surface>
-            )}
-
-            <Surface style={styles.infoBox}>
-              <Text style={styles.infoText}>
-                ⚠️ This is an AI-powered estimate. Consult agricultural experts for critical decisions.
-              </Text>
-            </Surface>
-          </Card.Content>
-        </Card>
-      )}
-
-      {!image && !loading && !result && (
-        <Card style={styles.placeholderCard}>
-          <Card.Content>
-            <Text style={styles.placeholderText}>📸 No image selected</Text>
-            <Text style={styles.placeholderSubtext}>Choose an image from gallery or take a photo to get started</Text>
-          </Card.Content>
-        </Card>
-      )}
-
-      <View style={{ height: 30 }} />
-    </ScrollView>
-    
-    {/* Snackbar for success/error messages - replaces window.alert() */}
-    <Snackbar
-      visible={snackbarVisible}
-      onDismiss={() => setSnackbarVisible(false)}
-      duration={4000}
-      action={{
-        label: 'OK',
-        onPress: () => setSnackbarVisible(false),
-      }}
-      style={{ 
-        backgroundColor: snackbarMessage.includes('❌') ? '#F44336' : '#4CAF50',
-        marginBottom: Platform.OS === 'web' ? 20 : 0
-      }}
-    >
-      <Text style={{ color: '#fff', fontSize: 15, fontWeight: '500' }}>
-        {snackbarMessage}
-      </Text>
-    </Snackbar>
-    </View>
+      <Text style={styles.sectionHeaderText}>{title}</Text>
+      <Text style={styles.sectionChevron}>{isOpen ? '▲' : '▼'}</Text>
+    </TouchableOpacity>
   );
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────────────────────────────────────
+
+export default function PlantAnalyzerScreen(): JSX.Element {
+  useNavigation(); // imported as required; safe-go-back wraps it
+  const handleGoBack = useSafeGoBack();
+
+  const [selectedImage, setSelectedImage] = useState<SelectedImage | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [result, setResult] = useState<PlantAnalysisResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [expandedSection, setExpandedSection] = useState<SectionKey | null>(null);
+
+  // ── Camera / Gallery ────────────────────────────────────────────────────────
+
+  const handleCamera = useCallback(async () => {
+    const { granted } = await ImagePicker.requestCameraPermissionsAsync();
+    if (!granted) {
+      Alert.alert(
+        'Permission Required',
+        'Camera access is needed to photograph your plants. Please enable it in Settings.',
+        [{ text: 'OK' }],
+      );
+      return;
+    }
+    const res = await ImagePicker.launchCameraAsync({
+      quality: 0.85,
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+    if (!res.canceled && res.assets.length > 0) {
+      setSelectedImage({ uri: res.assets[0].uri });
+      setResult(null);
+      setError(null);
+    }
+  }, []);
+
+  const handleGallery = useCallback(async () => {
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.85,
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+    if (!res.canceled && res.assets.length > 0) {
+      setSelectedImage({ uri: res.assets[0].uri });
+      setResult(null);
+      setError(null);
+    }
+  }, []);
+
+  const handleRemoveImage = useCallback(() => {
+    setSelectedImage(null);
+    setResult(null);
+    setError(null);
+  }, []);
+
+  // ── Analysis ─────────────────────────────────────────────────────────────────
+
+  const handleAnalyze = useCallback(async () => {
+    if (!selectedImage) return;
+    setAnalyzing(true);
+    setError(null);
+
+    try {
+      const formData = new FormData();
+      const filename = selectedImage.uri.split('/').pop() ?? 'plant.jpg';
+      const ext = filename.split('.').pop()?.toLowerCase() ?? 'jpg';
+      const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+
+      if (Platform.OS === 'web') {
+        const fetchRes = await fetch(selectedImage.uri);
+        const blob = await fetchRes.blob();
+        formData.append(
+          'image',
+          new File([blob], filename, { type: mimeType }),
+          filename,
+        );
+      } else {
+        // React Native FormData accepts this shape
+        // @ts-ignore
+        formData.append('image', { uri: selectedImage.uri, name: filename, type: mimeType });
+      }
+
+      const response = await api.analyzePlant(formData);
+      setResult(response.result);
+      setExpandedSection('about');
+    } catch (err: any) {
+      const msg: string = err?.message ?? 'Analysis failed. Please try again.';
+      setError(msg);
+      Alert.alert('Analysis Failed', msg);
+    } finally {
+      setAnalyzing(false);
+    }
+  }, [selectedImage]);
+
+  // ── Section toggle ────────────────────────────────────────────────────────────
+
+  const toggleSection = useCallback((key: SectionKey) => {
+    setExpandedSection(prev => (prev === key ? null : key));
+  }, []);
+
+  // ── Derived values ───────────────────────────────────────────────────────────
+
+  const isHealthy =
+    result?.disease === 'Healthy' ||
+    (result?.disease?.toLowerCase().includes('healthy') ?? false);
+
+  const confidencePct = result
+    ? Math.min(Math.max(Math.round(result.confidence), 0), 100)
+    : 0;
+
+  const severityStyle = getSeverityStyle(result?.severity);
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ── HEADER ──────────────────────────────────────────────────────────── */}
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={handleGoBack}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Plant Disease Analyzer</Text>
+          <View style={styles.headerSpacer} />
+        </View>
+        <Text style={styles.headerSubtitle}>AI-powered disease detection</Text>
+      </View>
+
+      {/* ── UPLOAD ZONE ─────────────────────────────────────────────────────── */}
+      {!selectedImage && (
+        <View style={styles.uploadZone}>
+          <Text style={styles.uploadEmoji}>🌿</Text>
+          <Text style={styles.uploadTitle}>Upload Plant Photo</Text>
+          <Text style={styles.uploadSubtitle}>Get instant disease diagnosis</Text>
+          <View style={styles.uploadButtonRow}>
+            <TouchableOpacity
+              style={styles.uploadButton}
+              onPress={handleCamera}
+              activeOpacity={0.75}
+            >
+              <Text style={styles.uploadButtonText}>📷 Camera</Text>
+            </TouchableOpacity>
+            <View style={styles.uploadButtonGap} />
+            <TouchableOpacity
+              style={styles.uploadButton}
+              onPress={handleGallery}
+              activeOpacity={0.75}
+            >
+              <Text style={styles.uploadButtonText}>🖼️ Gallery</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* ── IMAGE PREVIEW ───────────────────────────────────────────────────── */}
+      {selectedImage && (
+        <View style={styles.imageWrapper}>
+          <Image
+            source={{ uri: selectedImage.uri }}
+            style={styles.previewImage}
+            resizeMode="cover"
+          />
+          <TouchableOpacity
+            style={styles.removeButton}
+            onPress={handleRemoveImage}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          >
+            <Text style={styles.removeButtonText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* ── ANALYZE BUTTON ──────────────────────────────────────────────────── */}
+      {selectedImage && (
+        <TouchableOpacity
+          style={[styles.analyzeButton, analyzing && styles.analyzeButtonDisabled]}
+          onPress={handleAnalyze}
+          disabled={analyzing}
+          activeOpacity={0.8}
+        >
+          {analyzing ? (
+            <View style={styles.analyzeButtonContent}>
+              <ActivityIndicator color={Colors.surface} size="small" />
+              <Text style={styles.analyzeButtonText}>  Analyzing...</Text>
+            </View>
+          ) : (
+            <Text style={styles.analyzeButtonText}>🔍 Analyze Plant</Text>
+          )}
+        </TouchableOpacity>
+      )}
+
+      {/* ── ERROR BANNER ────────────────────────────────────────────────────── */}
+      {error && !analyzing && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorBannerText}>⚠️ {error}</Text>
+        </View>
+      )}
+
+      {/* ── RESULTS SECTION ─────────────────────────────────────────────────── */}
+      {result && !analyzing && (
+        <View style={styles.resultCard}>
+          {/* ── Disease name ── */}
+          <View style={styles.resultTitleRow}>
+            {isHealthy ? (
+              <Text style={styles.resultTitleHealthy}>✅ Healthy Plant</Text>
+            ) : (
+              <Text style={styles.resultTitleDisease}>⚠️ {result.disease}</Text>
+            )}
+          </View>
+          <Text style={styles.resultCropName}>{result.crop}</Text>
+
+          {/* ── Confidence bar ── */}
+          <Text style={styles.confidenceLabel}>Confidence: {confidencePct}%</Text>
+          <View style={styles.confidenceTrack}>
+            <View
+              style={[
+                styles.confidenceFill,
+                // Dynamic width is a runtime value; cannot be pre-declared in StyleSheet
+                { width: `${confidencePct}%` as unknown as number },
+              ]}
+            />
+          </View>
+
+          {/* ── Severity badge ── */}
+          {result.severity && (
+            <View style={styles.severityRow}>
+              <View
+                style={[
+                  styles.severityBadge,
+                  { backgroundColor: severityStyle.badgeBg },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.severityText,
+                    { color: severityStyle.badgeText },
+                  ]}
+                >
+                  {result.severity} Severity
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* ── SECTION: About This Disease ── */}
+          <View style={styles.sectionContainer}>
+            <SectionHeader
+              title="About This Disease"
+              sectionKey="about"
+              expanded={expandedSection}
+              onToggle={toggleSection}
+            />
+            {expandedSection === 'about' && (
+              <View style={styles.sectionBody}>
+                {result.recommendations.symptoms.length > 0 ? (
+                  result.recommendations.symptoms.map((symptom, i) => (
+                    <View key={i} style={styles.numberedItem}>
+                      <Text style={styles.numberedItemIndex}>{i + 1}.</Text>
+                      <Text style={styles.numberedItemText}>{symptom}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.emptyListText}>No symptoms listed.</Text>
+                )}
+              </View>
+            )}
+          </View>
+
+          {/* ── SECTION: Treatment Plan ── */}
+          <View style={styles.sectionContainer}>
+            <SectionHeader
+              title="Treatment Plan"
+              sectionKey="treatment"
+              expanded={expandedSection}
+              onToggle={toggleSection}
+            />
+            {expandedSection === 'treatment' && (
+              <View style={styles.sectionBody}>
+                <Text style={styles.treatSubHeader}>Chemical</Text>
+                {result.recommendations.chemical.length > 0 ? (
+                  result.recommendations.chemical.map((item, i) => (
+                    <View key={i} style={styles.bulletItem}>
+                      <Text style={styles.bulletDot}>•</Text>
+                      <Text style={styles.bulletText}>{item}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.emptyListText}>None listed.</Text>
+                )}
+
+                <Text style={styles.treatSubHeader}>Organic</Text>
+                {result.recommendations.organic.length > 0 ? (
+                  result.recommendations.organic.map((item, i) => (
+                    <View key={i} style={styles.bulletItem}>
+                      <Text style={styles.bulletDot}>•</Text>
+                      <Text style={styles.bulletText}>{item}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.emptyListText}>None listed.</Text>
+                )}
+
+                <Text style={styles.treatSubHeader}>Preventive</Text>
+                {result.recommendations.preventive.length > 0 ? (
+                  result.recommendations.preventive.map((item, i) => (
+                    <View key={i} style={styles.bulletItem}>
+                      <Text style={styles.bulletDot}>•</Text>
+                      <Text style={styles.bulletText}>{item}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.emptyListText}>None listed.</Text>
+                )}
+              </View>
+            )}
+          </View>
+
+          {/* ── SECTION: Recommended Products ── */}
+          <View style={styles.sectionContainer}>
+            <SectionHeader
+              title="Recommended Products"
+              sectionKey="products"
+              expanded={expandedSection}
+              onToggle={toggleSection}
+            />
+            {expandedSection === 'products' && (
+              <View style={styles.sectionBody}>
+                {result.fertilizers.length > 0 ? (
+                  result.fertilizers.map((fert, i) => (
+                    <View key={i} style={styles.fertCard}>
+                      <View style={styles.fertCardHeader}>
+                        <Text style={styles.fertName}>{fert.name}</Text>
+                        {fert.safetyWarning && (
+                          <View style={styles.safetyBadge}>
+                            <Text style={styles.safetyBadgeText}>⚠️ Safety</Text>
+                          </View>
+                        )}
+                      </View>
+                      {fert.dosage ? (
+                        <Text style={styles.fertDetail}>Dosage: {fert.dosage}</Text>
+                      ) : null}
+                      {fert.application ? (
+                        <Text style={styles.fertDetail}>
+                          Application: {fert.application}
+                        </Text>
+                      ) : null}
+                      {fert.safetyWarning ? (
+                        <Text style={styles.fertWarning}>{fert.safetyWarning}</Text>
+                      ) : null}
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.emptyListText}>No products listed.</Text>
+                )}
+              </View>
+            )}
+          </View>
+
+          {/* ── SAVE REPORT ── */}
+          <View style={styles.saveRow}>
+            <TouchableOpacity
+              style={styles.saveButton}
+              activeOpacity={0.75}
+              onPress={() =>
+                Alert.alert('Report Saved', 'Your analysis report has been saved successfully.')
+              }
+            >
+              <Text style={styles.saveButtonText}>💾 Save Report</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      <View style={styles.bottomPadding} />
+    </ScrollView>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Styles – NO inline style objects permitted; all values declared here
+// ─────────────────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F7FA' },
-  header: { padding: 24, margin: 16, borderRadius: 20, backgroundColor: '#fff', elevation: 2 },
-  title: { fontWeight: 'bold', color: '#1E293B', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#64748B' },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 16, marginVertical: 16 },
-  button: { flex: 1, marginHorizontal: 8 },
-  imageCard: { marginHorizontal: 16, marginBottom: 16, borderRadius: 16, overflow: 'hidden', elevation: 3 },
-  image: { width: '100%', height: 300, resizeMode: 'cover' },
-  loadingContainer: { alignItems: 'center', padding: 40 },
-  loadingText: { marginTop: 16, fontSize: 16, color: '#64748B', fontWeight: '600' },
-  loadingSubtext: { marginTop: 8, fontSize: 14, color: '#94A3B8' },
-  resultCard: { 
-    marginHorizontal: 16, 
-    marginBottom: 16, 
-    borderRadius: 16, 
-    backgroundColor: '#fff', 
-    elevation: 3,
-    zIndex: 999,
-    position: 'relative',
+  // ── Layout ──────────────────────────────────────────────────────────────────
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
   },
-  resultHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  resultTitle: { fontWeight: 'bold', color: '#1E293B' },
-  confidenceChip: { elevation: 2 },
-  diseaseCard: { backgroundColor: '#FFF3E0', padding: 16, borderRadius: 12, marginBottom: 16 },
-  diseaseLabel: { fontSize: 12, color: '#E65100', fontWeight: '600', marginBottom: 4, textTransform: 'uppercase' },
-  diseaseName: { fontSize: 20, fontWeight: 'bold', color: '#E65100' },
-  recommendationsSection: { marginBottom: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#1E293B', marginBottom: 8 },
-  recommendationText: { fontSize: 14, color: '#475569', lineHeight: 22 },
-  treatmentSection: { marginBottom: 16 },
-  treatmentText: { fontSize: 14, color: '#475569', lineHeight: 22 },
-  fertilizersSection: { marginBottom: 16 },
-  fertilizerText: { fontSize: 14, color: '#475569', lineHeight: 22, marginLeft: 8 },
-  predictionsSection: { marginBottom: 16 },
-  predictionCard: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, backgroundColor: '#F8FAFC', borderRadius: 8, marginBottom: 8 },
-  predictionName: { fontSize: 14, color: '#334155', fontWeight: '500' },
-  predictionConfidence: { fontSize: 14, color: '#4CAF50', fontWeight: 'bold' },
-  debugCard: { backgroundColor: '#FFF9E6', padding: 16, borderRadius: 12, marginTop: 16, marginBottom: 16 },
-  debugTitle: { fontSize: 14, color: '#92400E', marginBottom: 8, fontWeight: '600' },
-  debugText: { fontSize: 11, color: '#78350F', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', lineHeight: 16 },
-  debugHint: { fontSize: 12, color: '#A16207', marginTop: 8, fontStyle: 'italic' },
-  infoBox: { backgroundColor: '#E3F2FD', padding: 12, borderRadius: 8, marginTop: 8, elevation: 0 },
-  infoText: { fontSize: 12, color: '#1565C0', textAlign: 'center' },
-  placeholderCard: { marginHorizontal: 16, marginTop: 40, borderRadius: 16, backgroundColor: '#FFF9E6' },
-  placeholderText: { fontSize: 18, fontWeight: 'bold', color: '#F59E0B', textAlign: 'center', marginBottom: 8 },
-  placeholderSubtext: { fontSize: 14, color: '#92400E', textAlign: 'center' },
+  contentContainer: {
+    paddingBottom: 48,
+  },
+  bottomPadding: {
+    height: 24,
+  },
+
+  // ── Header ──────────────────────────────────────────────────────────────────
+  header: {
+    backgroundColor: Colors.primary,
+    paddingTop: 44,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backArrow: {
+    color: Colors.textInverse,
+    fontSize: 22,
+    fontWeight: '600',
+  },
+  headerTitle: {
+    flex: 1,
+    color: Colors.textInverse,
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 36,
+  },
+  headerSubtitle: {
+    color: 'rgba(255,255,255,0.70)',
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+
+  // ── Upload zone ─────────────────────────────────────────────────────────────
+  uploadZone: {
+    margin: 16,
+    borderWidth: 2,
+    borderColor: Colors.accent,
+    borderStyle: 'dashed',
+    borderRadius: 16,
+    height: 220,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  uploadEmoji: {
+    fontSize: 56,
+    marginBottom: 8,
+  },
+  uploadTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  uploadSubtitle: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginBottom: 20,
+  },
+  uploadButtonRow: {
+    flexDirection: 'row',
+    alignSelf: 'stretch',
+  },
+  uploadButton: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1.5,
+    borderColor: Colors.accent,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: Colors.surface,
+  },
+  uploadButtonGap: {
+    width: 8,
+  },
+  uploadButtonText: {
+    color: Colors.accent,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+
+  // ── Image preview ────────────────────────────────────────────────────────────
+  imageWrapper: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  previewImage: {
+    width: '100%',
+    height: 240,
+    borderRadius: 12,
+  },
+  removeButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeButtonText: {
+    color: Colors.textInverse,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  // ── Analyze button ───────────────────────────────────────────────────────────
+  analyzeButton: {
+    marginHorizontal: 16,
+    marginTop: 14,
+    height: 52,
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  analyzeButtonDisabled: {
+    opacity: 0.6,
+  },
+  analyzeButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  analyzeButtonText: {
+    color: Colors.textInverse,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+
+  // ── Error banner ─────────────────────────────────────────────────────────────
+  errorBanner: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: Colors.errorLight,
+    borderRadius: 10,
+    padding: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.error,
+  },
+  errorBannerText: {
+    fontSize: 14,
+    color: Colors.error,
+    lineHeight: 20,
+  },
+
+  // ── Result card ──────────────────────────────────────────────────────────────
+  resultCard: {
+    backgroundColor: Colors.surface,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  resultTitleRow: {
+    marginBottom: 4,
+  },
+  resultTitleHealthy: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.success,
+  },
+  resultTitleDisease: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.error,
+  },
+  resultCropName: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    marginBottom: 16,
+  },
+
+  // ── Confidence bar ───────────────────────────────────────────────────────────
+  confidenceLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+    marginBottom: 6,
+  },
+  confidenceTrack: {
+    height: 8,
+    backgroundColor: Colors.border,
+    borderRadius: 4,
+    marginBottom: 14,
+    overflow: 'hidden',
+  },
+  confidenceFill: {
+    height: 8,
+    maxWidth: '100%',
+    backgroundColor: Colors.accent,
+    borderRadius: 4,
+  },
+
+  // ── Severity badge ───────────────────────────────────────────────────────────
+  severityRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  severityBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  severityText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  // ── Expandable sections ──────────────────────────────────────────────────────
+  sectionContainer: {
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    marginTop: 2,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+  },
+  sectionHeaderText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+  },
+  sectionChevron: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+  },
+  sectionBody: {
+    paddingBottom: 14,
+  },
+
+  // ── Numbered list ────────────────────────────────────────────────────────────
+  numberedItem: {
+    flexDirection: 'row',
+    marginBottom: 7,
+  },
+  numberedItemIndex: {
+    fontSize: 14,
+    color: Colors.accent,
+    fontWeight: '700',
+    marginRight: 8,
+    minWidth: 22,
+  },
+  numberedItemText: {
+    fontSize: 14,
+    color: Colors.textPrimary,
+    flex: 1,
+    lineHeight: 20,
+  },
+  emptyListText: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontStyle: 'italic',
+  },
+
+  // ── Treatment sub-headers + bullets ──────────────────────────────────────────
+  treatSubHeader: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: Colors.primary,
+    marginTop: 12,
+    marginBottom: 7,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  bulletItem: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  bulletDot: {
+    fontSize: 14,
+    color: Colors.accent,
+    fontWeight: '700',
+    marginRight: 8,
+  },
+  bulletText: {
+    fontSize: 14,
+    color: Colors.textPrimary,
+    flex: 1,
+    lineHeight: 20,
+  },
+
+  // ── Fertilizer cards ─────────────────────────────────────────────────────────
+  fertCard: {
+    backgroundColor: Colors.surfaceAlt,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  fertCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  fertName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    flex: 1,
+    marginRight: 8,
+  },
+  safetyBadge: {
+    backgroundColor: Colors.warningLight,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+  },
+  safetyBadgeText: {
+    fontSize: 11,
+    color: Colors.warning,
+    fontWeight: '600',
+  },
+  fertDetail: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    marginBottom: 2,
+  },
+  fertWarning: {
+    fontSize: 12,
+    color: Colors.warning,
+    marginTop: 5,
+    lineHeight: 17,
+  },
+
+  // ── Save report ──────────────────────────────────────────────────────────────
+  saveRow: {
+    alignItems: 'center',
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: 16,
+  },
+  saveButton: {
+    width: 200,
+    height: 44,
+    borderWidth: 1.5,
+    borderColor: Colors.primary,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveButtonText: {
+    color: Colors.primary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
 });

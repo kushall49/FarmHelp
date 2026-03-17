@@ -1,5 +1,5 @@
-# Use Node.js 18 LTS
-FROM node:18-alpine
+# Use Node.js 18 LTS with updated Alpine for fewer vulnerabilities
+FROM node:18-alpine3.20
 
 # Set working directory
 WORKDIR /app

@@ -134,7 +134,10 @@ userSchema.statics.createTestUser = async function() {
   if (!user) {
     // Use bcrypt to hash a test password from environment variable
     const bcrypt = require('bcrypt');
-    const testPassword = process.env.DEV_TEST_PASSWORD || 'DevTest123!';
+    const testPassword = process.env.DEV_TEST_PASSWORD;
+    if (!testPassword) {
+      throw new Error('DEV_TEST_PASSWORD environment variable is required');
+    }
     const hashedPassword = await bcrypt.hash(testPassword, 10);
     
     user = await this.create({

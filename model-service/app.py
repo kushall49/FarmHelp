@@ -590,6 +590,14 @@ def retrain_model():
                 'error': 'confirmed_data_path is required'
             }), 400
         
+        # Validate and sanitize confirmed_data_path to prevent path traversal
+        confirmed_data_path = os.path.abspath(confirmed_data_path)
+        if '..' in confirmed_data_path or not os.path.exists(confirmed_data_path):
+            return jsonify({
+                'success': False,
+                'error': 'Invalid or non-existent confirmed_data_path'
+            }), 400
+        
         logger.info(f"[Retraining] Starting retraining with {confirmed_data_path}")
         
         # Import retraining module

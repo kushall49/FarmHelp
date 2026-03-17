@@ -102,7 +102,7 @@ export default function UserProfileScreen() {
           <View style={styles.profileHeader}>
             {/* Avatar */}
             <View style={styles.avatarContainer}>
-              {user.avatar ? (
+              {user.avatar && typeof user.avatar === 'string' && user.avatar.match(/^https?:\/\//) ? (
                 <Image source={{ uri: user.avatar }} style={styles.avatar} />
               ) : (
                 <Image 

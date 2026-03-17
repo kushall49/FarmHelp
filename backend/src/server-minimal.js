@@ -6,8 +6,8 @@ require('dotenv').config();
 const app = express();
 app.disable('x-powered-by');
 
-// Import Crop model
-const Crop = require('./models/Crop.ts').default || require('./models/Crop.ts');
+// Import Crop model (registers the model with Mongoose)
+require('./models/Crop');
 
 // ============================================
 // MIDDLEWARE CONFIGURATION (ORDER IS CRITICAL!)
@@ -15,8 +15,17 @@ const Crop = require('./models/Crop.ts').default || require('./models/Crop.ts');
 
 // 1. CORS - Enable Cross-Origin Resource Sharing
 // Must be first to handle preflight requests
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : ['http://localhost:19000', 'http://localhost:19001', 'http://localhost:19003', 'http://localhost:19006', 'http://localhost:8081'];
+
 app.use(cors({
-  origin: ['http://localhost:19000', 'http://localhost:19001', 'http://localhost:19003', 'http://localhost:19006', 'http://localhost:8081', 'http://192.168.*.*:19000'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.some(o => origin.startsWith(o))) return callback(null, true);
+    callback(new Error(`CORS policy: origin ${origin} not allowed`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -45,7 +54,11 @@ app.use((req, res, next) => {
 // DATABASE CONNECTION
 // ============================================
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://1ms23cs094_db_user:AEQZush8GtcXuvfH@cluster0.ug766o7.mongodb.net/farmmate';
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  console.error('[✗] MONGODB_URI environment variable is required');
+  process.exit(1);
+}
 
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
@@ -92,6 +105,7 @@ app.use('/api/auth', authRoutes);
 // Community routes - Posts & Comments (Reddit-like feature)
 const communityRoutes = require('./routes/community-routes');
 app.use('/api/community', communityRoutes);
+app.use('/api/posts', communityRoutes);  // Alias expected by frontend
 
 // Services Marketplace routes - New OLX-style marketplace for farmers
 const serviceRoutes = require('./routes/serviceRoutes');
@@ -108,6 +122,18 @@ const plantUploadRoutes = require('./routes/plant-upload');
 const plantRoutes = require('./routes/plant');
 app.use('/api/plant', plantUploadRoutes);  // Handles /upload-plant
 app.use('/api/plant', plantRoutes);        // Handles /analyze and /last
+
+// Chat route - FarmBot AI assistant (Groq-powered)
+const chatRoutes = require('./routes/chat');
+app.use('/api/chat', chatRoutes);
+
+// Weather route - OpenWeather integration with mock fallback
+const weatherRoutes = require('./routes/weather');
+app.use('/api/weather', weatherRoutes);
+
+// Saved Crops route - persist crop recommendations per user
+const savedCropRoutes = require('./routes/savedCrops');
+app.use('/api/crops/saved', savedCropRoutes);
 
 // Enhanced Crops route - Smart recommendations based on soil, season, and temperature
 app.get('/api/crops', async (req, res) => {
@@ -308,18 +334,28 @@ app.use((req, res, next) => {
     availableRoutes: [
       'GET /',
       'POST /api/auth/signup',
+      'POST /api/auth/register',
       'POST /api/auth/login',
+      'GET  /api/auth/me',
+      'PUT  /api/auth/profile',
       'GET /api/community',
       'POST /api/community',
+      'GET /api/posts',
+      'POST /api/posts',
       'GET /api/services',
       'POST /api/services',
       'GET /api/jobs',
       'POST /api/jobs',
       'POST /api/users/rate/:providerId',
-      'POST /api/plant/analyze',        // Frontend-compatible endpoint
-      'GET /api/plant/last',             // Get user's last 5 analyses
-      'POST /api/plant/upload-plant',    // Alternative upload endpoint
-      'POST /api/chatbot'
+      'POST /api/plant/analyze',
+      'GET /api/plant/last',
+      'POST /api/plant/upload-plant',
+      'POST /api/chatbot',
+      'POST /api/chat/message',
+      'GET  /api/weather?lat=&lon=',
+      'GET  /api/crops/saved',
+      'POST /api/crops/saved',
+      'DELETE /api/crops/saved/:id'
     ]
   });
 });
@@ -352,9 +388,16 @@ const server = app.listen(PORT, () => {
   console.log('\n[✓] Available Endpoints:');
   console.log('   📍 Health Check:  GET  /');
   console.log('   🔐 Signup:        POST /api/auth/signup');
+  console.log('   🔐 Register:      POST /api/auth/register');
   console.log('   🔐 Login:         POST /api/auth/login');
+  console.log('   👤 Profile:       GET  /api/auth/me');
+  console.log('   ✏️  Profile Edit:  PUT  /api/auth/profile');
   console.log('   📝 Community:     GET/POST /api/community');
+  console.log('   📝 Posts:         GET/POST /api/posts');
   console.log('   💬 Chatbot:       POST /api/chatbot');
+  console.log('   🤖 Chat (Groq):   POST /api/chat/message');
+  console.log('   🌤  Weather:       GET  /api/weather');
+  console.log('   🌾 Saved Crops:   GET/POST/DELETE /api/crops/saved');
   console.log('\n[✓] Middleware Order:');
   console.log('   1. CORS');
   console.log('   2. express.json() ← Body Parser (CRITICAL!)');

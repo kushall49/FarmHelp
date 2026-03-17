@@ -107,7 +107,7 @@ export default function CreateJobRequestScreen({ navigation }: any) {
 
       console.log('[CREATE JOB] Sending data to API:', JSON.stringify(jobData, null, 2));
       const response = await api.createJobRequest(jobData);
-      console.log('[CREATE JOB] API response:', response.data);
+      console.log('[CREATE JOB] API response:', response);
 
       // Clear form
       setServiceNeeded('');

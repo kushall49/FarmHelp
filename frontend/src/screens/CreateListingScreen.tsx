@@ -195,7 +195,7 @@ export default function CreateListingScreen({ navigation }: any) {
 
       console.log('[CREATE LISTING] Sending data to API:', JSON.stringify(listingData, null, 2));
       const response = await api.createServiceListing(listingData);
-      console.log('[CREATE LISTING] API response:', response.data);
+      console.log('[CREATE LISTING] API response:', response);
 
       // Clear form
       setServiceType('');

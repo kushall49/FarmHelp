@@ -1,507 +1,688 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
-  ScrollView,
-  StyleSheet,
+  Text,
   FlatList,
   TouchableOpacity,
-  RefreshControl,
-  Dimensions,
-} from 'react-native';
-import {
-  Text,
-  Surface,
-  Chip,
-  FAB,
-  Portal,
+  StyleSheet,
+  TextInput,
+  Modal,
+  ScrollView,
   ActivityIndicator,
-  Searchbar,
-  Menu,
-  Button,
-  IconButton,
-} from 'react-native-paper';
-import { useFocusEffect } from '@react-navigation/native';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import api from '../services/api';
-import ServiceCard from '../components/ServiceCard';
-import JobCard from '../components/JobCard';
-import { useSafeGoBack } from '../navigation/AppNavigator';
+  RefreshControl,
+  Alert,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { api, ServiceListing } from '../services/api';
+import { Colors } from '../constants/colors';
+import { useAuth } from '../context/AuthContext';
+import ServiceCard from '../components/services/ServiceCard';
+import EmptyState from '../components/common/EmptyState';
 
-const { width } = Dimensions.get('window');
+// ─── Constants ────────────────────────────────────────────────────────────────
 
-const SERVICE_TYPES = [
+const CATEGORIES: string[] = [
   'All',
   'Tractor',
   'Harvester',
   'Ploughing',
   'Seeding',
-  'Irrigation Setup',
+  'Irrigation',
   'Pesticide Spraying',
-  'Farm Labor',
+  'Labor',
   'Transport',
   'Equipment Rental',
-  'Other',
 ];
 
-const KARNATAKA_DISTRICTS = [
-  'All Districts',
-  'Bagalkot',
-  'Ballari',
-  'Belagavi',
-  'Bengaluru Rural',
-  'Bengaluru Urban',
-  'Bidar',
-  'Chamarajanagar',
-  'Chikkaballapura',
-  'Chikkamagaluru',
-  'Chitradurga',
-  'Dakshina Kannada',
-  'Davanagere',
+const INDIAN_DISTRICTS: string[] = [
+  'Belgaum',
   'Dharwad',
-  'Gadag',
-  'Hassan',
-  'Haveri',
-  'Kalaburagi',
-  'Kodagu',
-  'Kolar',
-  'Koppal',
-  'Mandya',
   'Mysuru',
-  'Raichur',
-  'Ramanagara',
-  'Shivamogga',
-  'Tumakuru',
-  'Udupi',
-  'Uttara Kannada',
-  'Vijayapura',
-  'Yadgir',
+  'Nashik',
+  'Pune',
+  'Kolhapur',
+  'Amravati',
+  'Aurangabad',
+  'Ludhiana',
+  'Amritsar',
+  'Jalandhar',
+  'Jaipur',
+  'Jodhpur',
+  'Ahmedabad',
+  'Surat',
+  'Vadodara',
+  'Hyderabad',
+  'Warangal',
+  'Visakhapatnam',
+  'Coimbatore',
 ];
 
-export default function ServicesHomeScreen({ navigation, route }: any) {
-  const [activeTab, setActiveTab] = useState<'services' | 'jobs'>(
-    route.params?.initialTab || 'services'
-  );
-  const [services, setServices] = useState([]);
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  
-  // Filters
-  const [selectedDistrict, setSelectedDistrict] = useState('All Districts');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  // FAB menu
-  const [fabOpen, setFabOpen] = useState(false);
-  
-  // District dropdown
-  const [districtMenuVisible, setDistrictMenuVisible] = useState(false);
+// ─── Component ────────────────────────────────────────────────────────────────
 
-  // Refresh when screen comes into focus (after creating service/job)
-  useFocusEffect(
-    React.useCallback(() => {
-      fetchData();
-    }, [activeTab, selectedDistrict, selectedCategory])
+export default function ServicesHomeScreen(): JSX.Element {
+  const navigation = useNavigation<any>();
+  const { state: authState } = useAuth();
+
+  // State
+  const [services, setServices] = useState<ServiceListing[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedDistrict, setSelectedDistrict] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'services' | 'jobs'>('services');
+  const [searchText, setSearchText] = useState<string>('');
+  const [showDistrictModal, setShowDistrictModal] = useState<boolean>(false);
+  const [page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+
+  // ── Data fetching ──────────────────────────────────────────────────────────
+
+  const loadServices = useCallback(
+    async (pageNum: number = 1, reset: boolean = false): Promise<void> => {
+      try {
+        if (pageNum === 1) {
+          setLoading(true);
+        }
+
+        const params: { district?: string; category?: string; page?: number } = {
+          page: pageNum,
+        };
+
+        if (selectedCategory !== 'All') {
+          params.category = selectedCategory;
+        }
+        if (selectedDistrict.trim() !== '') {
+          params.district = selectedDistrict;
+        }
+
+        const response = await api.getServices(params);
+        const fetched: ServiceListing[] = response.services ?? [];
+
+        if (reset || pageNum === 1) {
+          setServices(fetched);
+        } else {
+          setServices((prev) => [...prev, ...fetched]);
+        }
+
+        setHasMore(fetched.length > 0);
+        setPage(pageNum);
+      } catch (error) {
+        console.error('[ServicesHomeScreen] loadServices error:', error);
+        if (pageNum === 1) {
+          setServices([]);
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [selectedCategory, selectedDistrict],
   );
 
   useEffect(() => {
-    fetchData();
-  }, [activeTab, selectedDistrict, selectedCategory]);
+    loadServices(1, true);
+  }, [loadServices]);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      if (activeTab === 'services') {
-        await fetchServices();
-      } else {
-        await fetchJobs();
-      }
-    } catch (error) {
-      console.error('Fetch error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchServices = async () => {
-    try {
-      console.log('[SERVICES] Fetching services...');
-      console.log('[SERVICES] District:', selectedDistrict);
-      console.log('[SERVICES] Category:', selectedCategory);
-      
-      const params: any = { isAvailable: true };
-      
-      if (selectedDistrict !== 'All Districts') {
-        params.district = selectedDistrict;
-      }
-      
-      if (selectedCategory !== 'All') {
-        params.serviceType = selectedCategory;
-      }
-      
-      console.log('[SERVICES] Request params:', params);
-      
-      const response = await api.getServiceListings(params);
-      console.log('[SERVICES] Response:', response.data);
-      
-      const servicesData = response.data.data || [];
-      console.log('[SERVICES] Services count:', servicesData.length);
-      
-      setServices(servicesData);
-    } catch (error: any) {
-      console.error('[SERVICES] Fetch services error:', error);
-      console.error('[SERVICES] Error response:', error.response?.data);
-      setServices([]);
-    }
-  };
-
-  const fetchJobs = async () => {
-    try {
-      console.log('[JOBS] Fetching jobs...');
-      
-      const params: any = { isOpen: true };
-      
-      if (selectedDistrict !== 'All Districts') {
-        params.district = selectedDistrict;
-      }
-      
-      if (selectedCategory !== 'All') {
-        params.serviceNeeded = selectedCategory;
-      }
-      
-      console.log('[JOBS] Request params:', params);
-      
-      const response = await api.getJobRequests(params);
-      console.log('[JOBS] Response:', response.data);
-      
-      const jobsData = response.data.data || [];
-      console.log('[JOBS] Jobs count:', jobsData.length);
-      
-      setJobs(jobsData);
-    } catch (error: any) {
-      console.error('[JOBS] Fetch jobs error:', error);
-      console.error('[JOBS] Error response:', error.response?.data);
-      setJobs([]);
-    }
-  };
-
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async (): Promise<void> => {
     setRefreshing(true);
-    await fetchData();
+    await loadServices(1, true);
     setRefreshing(false);
+  }, [loadServices]);
+
+  const loadMore = useCallback((): void => {
+    if (!loading && hasMore) {
+      loadServices(page + 1, false);
+    }
+  }, [loading, hasMore, page, loadServices]);
+
+  // ── Actions ────────────────────────────────────────────────────────────────
+
+  const handleCall = useCallback((service: ServiceListing): void => {
+    Alert.alert(
+      'Call Provider',
+      `Call ${service.provider.name} for "${service.title}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Call',
+          onPress: async () => {
+            try {
+              await api.trackServiceCall(service._id);
+            } catch {
+              // Tracking failure should not block showing the number
+            } finally {
+              Alert.alert(
+                'Phone Number',
+                service.phoneNumber,
+                [{ text: 'OK' }],
+              );
+            }
+          },
+        },
+      ],
+    );
+  }, []);
+
+  // ── Derived data ───────────────────────────────────────────────────────────
+
+  const filteredServices = React.useMemo<ServiceListing[]>(() => {
+    const query = searchText.trim().toLowerCase();
+    if (!query) return services;
+    return services.filter(
+      (s) =>
+        s.title?.toLowerCase().includes(query) ||
+        s.description?.toLowerCase().includes(query),
+    );
+  }, [services, searchText]);
+
+  // ── Render helpers ─────────────────────────────────────────────────────────
+
+  const renderServiceItem = useCallback(
+    ({ item }: { item: ServiceListing }): JSX.Element => (
+      <ServiceCard
+        service={item}
+        onPress={() =>
+          navigation.navigate('ServiceDetails', { serviceId: item._id })
+        }
+        onCall={() => handleCall(item)}
+      />
+    ),
+    [navigation, handleCall],
+  );
+
+  const renderDistrictRow = ({
+    item,
+  }: {
+    item: string;
+  }): JSX.Element => {
+    const isSelected = selectedDistrict === item;
+    return (
+      <TouchableOpacity
+        style={[styles.districtRow, isSelected && styles.districtRowSelected]}
+        onPress={() => {
+          setSelectedDistrict(item);
+          setShowDistrictModal(false);
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={`Select district ${item}`}
+      >
+        <Text
+          style={[
+            styles.districtRowText,
+            isSelected && styles.districtRowTextSelected,
+          ]}
+        >
+          {item}
+        </Text>
+        {isSelected && (
+          <Text style={styles.districtCheckmark}>✓</Text>
+        )}
+      </TouchableOpacity>
+    );
   };
 
-  const filteredData = activeTab === 'services' ? services : jobs;
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
-      <Surface style={styles.header}>
-        <View style={styles.headerTop}>
-          <IconButton
-            icon="arrow-left"
-            size={24}
-            onPress={() => navigation.goBack()}
-          />
+    <View style={styles.screen}>
+
+      {/* ── HEADER ─────────────────────────────────────────────── */}
+      <View style={styles.header}>
+
+        {/* Row 1 – Title + create button */}
+        <View style={styles.headerRow1}>
           <Text style={styles.headerTitle}>Services Marketplace</Text>
-          <IconButton
-            icon="magnify"
-            size={24}
-            onPress={() => {}}
-          />
+          <TouchableOpacity
+            style={styles.headerCreateBtn}
+            onPress={() => navigation.navigate('CreateListing')}
+            accessibilityLabel="Create new listing"
+          >
+            <Text style={styles.headerCreateBtnText}>＋</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Tab Selector */}
-        <View style={styles.tabContainer}>
+        {/* Row 2 – Segmented tab pills */}
+        <View style={styles.tabRow}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'services' && styles.activeTab]}
+            style={[
+              styles.tabPill,
+              activeTab === 'services' && styles.tabPillActive,
+            ]}
             onPress={() => setActiveTab('services')}
           >
-            <MaterialCommunityIcons
-              name="tractor"
-              size={20}
-              color={activeTab === 'services' ? '#4CAF50' : '#666'}
-            />
-            <Text style={[styles.tabText, activeTab === 'services' && styles.activeTabText]}>
-              Find Service
+            <Text
+              style={[
+                styles.tabPillText,
+                activeTab === 'services' && styles.tabPillTextActive,
+              ]}
+            >
+              {'🏪 Find Services'}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'jobs' && styles.activeTab]}
+            style={[
+              styles.tabPill,
+              activeTab === 'jobs' && styles.tabPillActive,
+            ]}
             onPress={() => setActiveTab('jobs')}
           >
-            <MaterialCommunityIcons
-              name="briefcase-search"
-              size={20}
-              color={activeTab === 'jobs' ? '#4CAF50' : '#666'}
-            />
-            <Text style={[styles.tabText, activeTab === 'jobs' && styles.activeTabText]}>
-              Find Jobs
+            <Text
+              style={[
+                styles.tabPillText,
+                activeTab === 'jobs' && styles.tabPillTextActive,
+              ]}
+            >
+              {'📋 Find Jobs'}
             </Text>
           </TouchableOpacity>
         </View>
+      </View>
 
-        {/* District Filter */}
-        <Menu
-          visible={districtMenuVisible}
-          onDismiss={() => setDistrictMenuVisible(false)}
-          anchor={
+      {/* ── SEARCH BAR ─────────────────────────────────────────── */}
+      <View style={styles.searchBar}>
+        <Text style={styles.searchBarIcon}>🔍</Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search tractors, harvesters..."
+          placeholderTextColor={Colors.textMuted}
+          value={searchText}
+          onChangeText={setSearchText}
+          returnKeyType="search"
+          clearButtonMode="never"
+        />
+        {searchText.length > 0 && (
+          <TouchableOpacity
+            onPress={() => setSearchText('')}
+            style={styles.searchClearBtn}
+            accessibilityLabel="Clear search"
+          >
+            <Text style={styles.searchClearText}>✕</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* ── FILTER ROW ─────────────────────────────────────────── */}
+      <View style={styles.filterRow}>
+        <TouchableOpacity
+          style={styles.districtPill}
+          onPress={() => setShowDistrictModal(true)}
+          accessibilityLabel="Select district"
+        >
+          <Text style={styles.districtPillText}>
+            {'📍 ' + (selectedDistrict !== '' ? selectedDistrict : 'All Districts')}
+          </Text>
+          <Text style={styles.districtChevron}>▼</Text>
+        </TouchableOpacity>
+
+        {selectedDistrict !== '' && (
+          <TouchableOpacity
+            onPress={() => setSelectedDistrict('')}
+            accessibilityLabel="Clear district filter"
+          >
+            <Text style={styles.clearFilterText}>Clear</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* ── CATEGORY CHIPS ─────────────────────────────────────── */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chipsContent}
+        style={styles.chipsScrollView}
+      >
+        {CATEGORIES.map((cat) => {
+          const isSelected = selectedCategory === cat;
+          return (
             <TouchableOpacity
-              style={styles.districtButton}
-              onPress={() => setDistrictMenuVisible(true)}
+              key={cat}
+              style={[styles.chip, isSelected && styles.chipSelected]}
+              onPress={() => setSelectedCategory(cat)}
+              accessibilityRole="button"
+              accessibilityLabel={`Category: ${cat}`}
+              accessibilityState={{ selected: isSelected }}
             >
-              <MaterialCommunityIcons name="map-marker" size={20} color="#4CAF50" />
-              <Text style={styles.districtButtonText}>{selectedDistrict}</Text>
-              <MaterialCommunityIcons name="chevron-down" size={20} color="#666" />
+              <Text
+                style={[
+                  styles.chipText,
+                  isSelected && styles.chipTextSelected,
+                ]}
+              >
+                {cat}
+              </Text>
             </TouchableOpacity>
-          }
-        >
-          <ScrollView style={{ maxHeight: 300 }}>
-            {KARNATAKA_DISTRICTS.map((district) => (
-              <Menu.Item
-                key={district}
-                onPress={() => {
-                  setSelectedDistrict(district);
-                  setDistrictMenuVisible(false);
-                }}
-                title={district}
-              />
-            ))}
-          </ScrollView>
-        </Menu>
+          );
+        })}
+      </ScrollView>
 
-        {/* Category Chips */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.chipsContainer}
-          contentContainerStyle={styles.chipsContent}
-        >
-          {SERVICE_TYPES.map((category) => (
-            <Chip
-              key={category}
-              selected={selectedCategory === category}
-              onPress={() => setSelectedCategory(category)}
-              style={[
-                styles.chip,
-                selectedCategory === category && styles.selectedChip,
-              ]}
-              textStyle={[
-                styles.chipText,
-                selectedCategory === category && styles.selectedChipText,
-              ]}
-            >
-              {category}
-            </Chip>
-          ))}
-        </ScrollView>
-      </Surface>
-
-      {/* Content */}
+      {/* ── CONTENT LIST ───────────────────────────────────────── */}
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4CAF50" />
-          <Text style={styles.loadingText}>Loading...</Text>
+          <ActivityIndicator size="large" color={Colors.primary} />
         </View>
       ) : (
-        <FlatList
-          data={filteredData}
-          keyExtractor={(item: any) => item._id}
-          renderItem={({ item }) =>
-            activeTab === 'services' ? (
-              <ServiceCard
-                service={item}
-                onPress={() => navigation.navigate('ServiceDetails', { serviceId: item._id })}
-              />
-            ) : (
-              <JobCard
-                job={item}
-                onPress={() => navigation.navigate('JobDetails', { jobId: item._id })}
-              />
-            )
-          }
+        <FlatList<ServiceListing>
+          data={filteredServices}
+          keyExtractor={(item) => item._id}
+          renderItem={renderServiceItem}
           contentContainerStyle={styles.listContent}
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.4}
+          showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[Colors.primary]}
+              tintColor={Colors.primary}
+            />
           }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <MaterialCommunityIcons
-                name={activeTab === 'services' ? 'tractor' : 'briefcase-search'}
-                size={80}
-                color="#ccc"
-              />
-              <Text style={styles.emptyText}>
-                {activeTab === 'services'
-                  ? 'No services available in your area'
-                  : 'No job requests in your area'}
-              </Text>
-              <Text style={styles.emptySubtext}>
-                Try changing your filters or be the first to post!
-              </Text>
-            </View>
+            <EmptyState
+              icon="🏪"
+              title="No services found"
+              subtitle="Try changing your filters or district"
+              actionLabel="Post a Service"
+              onAction={() => navigation.navigate('CreateListing')}
+            />
           }
         />
       )}
 
-      {/* Floating Action Button */}
-      <Portal>
-        <FAB.Group
-          visible={true}
-          open={fabOpen}
-          icon={fabOpen ? 'close' : 'plus'}
-          actions={[
-            {
-              icon: 'tractor',
-              label: 'Offer Service',
-              onPress: () => navigation.navigate('CreateListing'),
-              style: styles.fabAction,
-            },
-            {
-              icon: 'briefcase-plus',
-              label: 'Request Service',
-              onPress: () => navigation.navigate('CreateJobRequest'),
-              style: styles.fabAction,
-            },
-            {
-              icon: 'format-list-bulleted',
-              label: 'My Listings',
-              onPress: () => navigation.navigate('MyListings'),
-              style: styles.fabAction,
-            },
-          ]}
-          onStateChange={({ open }) => setFabOpen(open)}
-          fabStyle={styles.fab}
+      {/* ── DISTRICT SELECTOR MODAL ─────────────────────────────── */}
+      <Modal
+        visible={showDistrictModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowDistrictModal(false)}
+      >
+        {/* Backdrop */}
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setShowDistrictModal(false)}
         />
-      </Portal>
+
+        {/* Bottom sheet */}
+        <View style={styles.districtSheet}>
+          <View style={styles.districtSheetHeader}>
+            <Text style={styles.districtSheetTitle}>Select District</Text>
+            <TouchableOpacity
+              onPress={() => setShowDistrictModal(false)}
+              style={styles.districtSheetCloseBtn}
+              accessibilityLabel="Close district selector"
+            >
+              <Text style={styles.districtSheetCloseText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+
+          <FlatList<string>
+            data={INDIAN_DISTRICTS}
+            keyExtractor={(item) => item}
+            renderItem={renderDistrictRow}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
+      </Modal>
     </View>
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: Colors.background,
   },
+
+  // ── Header ────────────────────────────────────────────────────
   header: {
-    backgroundColor: '#fff',
-    elevation: 2,
-    paddingBottom: 8,
+    backgroundColor: Colors.primary,
+    paddingTop: 44,
   },
-  headerTop: {
+  headerRow1: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    paddingTop: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#262626',
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 16,
-    gap: 12,
-    marginBottom: 12,
-  },
-  tab: {
     flex: 1,
-    flexDirection: 'row',
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.surface,
+    letterSpacing: 0.2,
+  },
+  headerCreateBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 8,
-    backgroundColor: '#F5F5F5',
+  },
+  headerCreateBtnText: {
+    color: Colors.surface,
+    fontSize: 18,
+    fontWeight: '400',
+    lineHeight: 22,
+  },
+
+  // ── Tab row ───────────────────────────────────────────────────
+  tabRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     gap: 8,
   },
-  activeTab: {
-    backgroundColor: '#E8F5E9',
+  tabPill: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  tabText: {
-    fontSize: 14,
+  tabPillActive: {
+    backgroundColor: Colors.surface,
+    borderColor: Colors.surface,
+  },
+  tabPillText: {
+    fontSize: 13,
     fontWeight: '600',
-    color: '#666',
+    color: Colors.surface,
   },
-  activeTabText: {
-    color: '#4CAF50',
+  tabPillTextActive: {
+    color: Colors.primary,
   },
-  districtButton: {
+
+  // ── Search bar ────────────────────────────────────────────────
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 4,
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  searchBarIcon: {
+    fontSize: 16,
+    paddingHorizontal: 12,
+    color: Colors.textMuted,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: Colors.textPrimary,
+    paddingVertical: 12,
+    paddingRight: 8,
+  },
+  searchClearBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  searchClearText: {
+    fontSize: 14,
+    color: Colors.textMuted,
+  },
+
+  // ── Filter row ────────────────────────────────────────────────
+  filterRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#F5F5F5',
-    borderRadius: 8,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    gap: 8,
+    paddingVertical: 8,
+    gap: 10,
   },
-  districtButtonText: {
-    flex: 1,
-    fontSize: 14,
+  districtPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.accentSoft,
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    gap: 6,
+  },
+  districtPillText: {
+    fontSize: 13,
     fontWeight: '600',
-    color: '#262626',
+    color: Colors.primary,
   },
-  chipsContainer: {
-    paddingLeft: 16,
+  districtChevron: {
+    fontSize: 10,
+    color: Colors.primary,
+  },
+  clearFilterText: {
+    fontSize: 13,
+    color: Colors.textMuted,
+    fontWeight: '500',
+  },
+
+  // ── Category chips ────────────────────────────────────────────
+  chipsScrollView: {
+    flexGrow: 0,
   },
   chipsContent: {
-    paddingRight: 16,
-    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignItems: 'center',
   },
   chip: {
-    backgroundColor: '#F5F5F5',
+    height: 34,
+    paddingHorizontal: 14,
+    borderRadius: 20,
     marginRight: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  selectedChip: {
-    backgroundColor: '#4CAF50',
+  chipSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   chipText: {
-    color: '#666',
-    fontSize: 12,
+    fontSize: 13,
+    color: Colors.textSecondary,
+    fontWeight: '500',
   },
-  selectedChipText: {
-    color: '#fff',
+  chipTextSelected: {
+    color: Colors.surface,
+    fontWeight: '600',
   },
+
+  // ── Loading ───────────────────────────────────────────────────
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loadingText: {
-    marginTop: 12,
-    color: '#666',
-    fontSize: 14,
-  },
+
+  // ── FlatList ──────────────────────────────────────────────────
   listContent: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 32,
+    flexGrow: 1,
   },
-  emptyContainer: {
+
+  // ── District modal backdrop ───────────────────────────────────
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.42)',
+  },
+
+  // ── District bottom sheet ─────────────────────────────────────
+  districtSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    top: '40%',
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.10,
+    shadowRadius: 10,
+    elevation: 16,
+  },
+  districtSheetHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 80,
-    paddingHorizontal: 32,
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
-  emptyText: {
+  districtSheetTitle: {
     fontSize: 16,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  districtSheetCloseBtn: {
+    padding: 6,
+  },
+  districtSheetCloseText: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+  },
+  districtRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  districtRowSelected: {
+    backgroundColor: Colors.accentSoft,
+  },
+  districtRowText: {
+    fontSize: 15,
+    color: Colors.textPrimary,
+  },
+  districtRowTextSelected: {
+    color: Colors.primary,
     fontWeight: '600',
-    color: '#666',
-    marginTop: 16,
-    textAlign: 'center',
   },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  fab: {
-    backgroundColor: '#4CAF50',
-  },
-  fabAction: {
-    backgroundColor: '#fff',
+  districtCheckmark: {
+    fontSize: 16,
+    color: Colors.primary,
+    fontWeight: '700',
   },
 });
