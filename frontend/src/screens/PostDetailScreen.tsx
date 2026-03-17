@@ -256,7 +256,11 @@ export default function PostDetailScreen() {
               onPress={() => handleProfilePress(post.author?._id)}
             >
               <Image 
-                source={{ uri: post.author?.avatar || getAvatarUrl(post.author?.username || 'User') }}
+                source={{ 
+                  uri: (post.author?.avatar && typeof post.author.avatar === 'string' && post.author.avatar.match(/^https?:\/\//)) 
+                    ? post.author.avatar 
+                    : getAvatarUrl(post.author?.username || 'User') 
+                }}
                 style={styles.authorAvatar}
               />
               <View style={styles.authorDetails}>
@@ -285,7 +289,7 @@ export default function PostDetailScreen() {
         </Card.Content>
 
         {/* Post Image (if exists) - Full Width Reddit Style */}
-        {post.imageUrl && (
+        {post.imageUrl && typeof post.imageUrl === 'string' && post.imageUrl.match(/^https?:\/\//) && (
           <View style={styles.imageContainer}>
             <Image 
               source={{ uri: post.imageUrl }} 
@@ -374,7 +378,11 @@ export default function PostDetailScreen() {
                   onPress={() => handleProfilePress(comment.author?._id)}
                 >
                   <Image 
-                    source={{ uri: comment.author?.avatar || getAvatarUrl(comment.author?.username || 'User') }}
+                    source={{ 
+                      uri: (comment.author?.avatar && typeof comment.author.avatar === 'string' && comment.author.avatar.match(/^https?:\/\//)) 
+                        ? comment.author.avatar 
+                        : getAvatarUrl(comment.author?.username || 'User') 
+                    }}
                     style={styles.commentAvatar}
                   />
                   <Text style={styles.commentAuthor}>

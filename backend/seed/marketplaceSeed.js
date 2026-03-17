@@ -7,9 +7,12 @@ require('dotenv').config();
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://1ms23cs094_db_user:AEQZush8GtcXuvfH@cluster0.ug766o7.mongodb.net/farmmate';
 
-// Generate secure test password hash (use env variable or secure random password)
+// Generate secure test password hash (use env variable ONLY - no fallback)
 const generateTestPasswordHash = async () => {
-  const testPassword = process.env.TEST_USER_PASSWORD || 'SecureTest123!';
+  const testPassword = process.env.TEST_USER_PASSWORD;
+  if (!testPassword) {
+    throw new Error('TEST_USER_PASSWORD environment variable is required for seeding');
+  }
   return await bcrypt.hash(testPassword, 10);
 };
 

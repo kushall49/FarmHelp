@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -305,6 +306,44 @@ router.get('/user/:userId', async (req, res) => {
       message: 'Server error' 
     });
   }
+});
+
+// Update user profile (requires auth)
+router.put('/profile', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.userId;
+    const { name, bio, state, farmSize } = req.body;
+
+    const updates = {};
+    if (name !== undefined) {
+      updates.name = name;
+      updates.displayName = name;
+    }
+    if (bio !== undefined) updates.bio = bio;
+    if (state !== undefined) updates.location = state;
+    if (farmSize !== undefined) updates.farmSize = farmSize;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).select('-password -passwordHash');
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    res.json({ success: true, user });
+  } catch (err) {
+    console.error('[PROFILE UPDATE ERROR]', err.message);
+    res.status(500).json({ success: false, error: 'Failed to update profile' });
+  }
+});
+
+// /register is an alias for /signup (frontend compatibility)
+router.post('/register', (req, res, next) => {
+  req.url = '/signup';
+  router.handle(req, res, next);
 });
 
 module.exports = router;

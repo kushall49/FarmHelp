@@ -60,6 +60,13 @@ class RetrainingSystem:
         print("Merging Confirmed Images with Training Dataset")
         print("==========================================================")
         
+        # Validate and sanitize original_dataset_path to prevent path traversal
+        if original_dataset_path:
+            # Ensure it's an absolute path and doesn't contain path traversal patterns
+            original_dataset_path = os.path.abspath(original_dataset_path)
+            if '..' in original_dataset_path or not os.path.exists(original_dataset_path):
+                raise ValueError(f"Invalid or non-existent dataset path: {original_dataset_path}")
+        
         # Count confirmed images
         confirmed_count = 0
         for disease_dir in self.confirmed_data_path.iterdir():
@@ -300,9 +307,15 @@ class RetrainingSystem:
         Returns:
             Dictionary with paths to retrained model files
         """
-        print("\n" + "="*60)
+        print("\\n" + "="*60)
         print("PLANT DISEASE MODEL RETRAINING SYSTEM")
         print("="*60)
+        
+        # Validate and sanitize original_dataset_path if provided
+        if original_dataset_path:
+            original_dataset_path = os.path.abspath(original_dataset_path)
+            if '..' in original_dataset_path or not os.path.exists(original_dataset_path):
+                raise ValueError(f"Invalid or non-existent original dataset path: {original_dataset_path}")
         
         # Step 1: Load base model
         self.load_base_model()

@@ -44,8 +44,31 @@ const upload = multer({
   }
 });
 
+// Rate limiting for file operations
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 10;
+
+function checkRateLimit(userId) {
+  const now = Date.now();
+  const userRequests = rateLimitMap.get(userId) || [];
+  const recentRequests = userRequests.filter(time => now - time < RATE_LIMIT_WINDOW);
+  
+  if (recentRequests.length >= MAX_REQUESTS_PER_WINDOW) {
+    return false;
+  }
+  
+  recentRequests.push(now);
+  rateLimitMap.set(userId, recentRequests);
+  return true;
+}
+
 // POST /api/plant/analyze - Upload and analyze plant image
 router.post('/analyze', authMiddleware, upload.single('image'), async (req, res) => {
+  // Rate limiting check
+  if (!checkRateLimit(req.user.id)) {
+    return res.status(429).json({ success: false, error: 'Too many requests. Please try again later.' });
+  }
   try {
     console.log('[PLANT] === NEW ANALYZE REQUEST ===');
     console.log('[PLANT] Content-Type:', req.headers['content-type']);

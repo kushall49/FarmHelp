@@ -3,10 +3,11 @@ Configuration Management for Flask ML Service
 """
 import os
 from pathlib import Path
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
 class Config:
     """Base configuration class"""

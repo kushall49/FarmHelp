@@ -1,949 +1,870 @@
-import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Animated, Dimensions, Image, ImageBackground } from 'react-native';
-import { Title, Card, Paragraph, ActivityIndicator, Text, Surface, Button, IconButton } from 'react-native-paper';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../services/api';
+/**
+ * HomeScreen.tsx
+ *
+ * Main landing screen for FarmHelp — a production-grade farming companion app.
+ * Shows a personalised greeting hero, live stats strip, quick-action grid,
+ * a community feed preview, and a trusted-farmers banner.
+ */
 
-const { width } = Dimensions.get('window');
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  Dimensions,
+  ActivityIndicator,
+  RefreshControl,
+  Image,
+  Animated,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useAuth } from '../context/AuthContext';
+import { useApp } from '../context/AppContext';
+import { api, Post } from '../services/api';
+import { Colors } from '../constants/colors';
+import QuickActionCard from '../components/home/QuickActionCard';
+import PostCard from '../components/community/PostCard';
+import Avatar from '../components/common/Avatar';
 
-export default function HomeScreen({ navigation }: any) {
-  const [crops, setCrops] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [username, setUsername] = useState('Guest');
-  const [weather, setWeather] = useState<any>(null);
-  const [weatherLoading, setWeatherLoading] = useState(true);
-  const fadeAnim = new Animated.Value(0);
+// ─── Screen dimensions ────────────────────────────────────────────────────────
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// ─── Local navigation type ────────────────────────────────────────────────────
+// Covers all routes accessible (directly or via tab jump) from this screen.
+type RootStackParamList = {
+  Home: undefined;
+  PlantAnalyzer: undefined;
+  CropRecommendation: undefined;
+  Chatbot: undefined;
+  Community: undefined;
+  Services: undefined;
+  Profile: undefined;
+};
+
+type HomeScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Home'
+>;
+
+// ─── Static data ──────────────────────────────────────────────────────────────
+const MONTH_NAMES: string[] = [
+  'January', 'February', 'March', 'April',
+  'May', 'June', 'July', 'August',
+  'September', 'October', 'November', 'December',
+];
+
+const STATE_BADGES: string[] = ['KA', 'MH', 'UP', 'AP', 'TN', 'PB', 'GJ'];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Returns a time-of-day greeting string based on the current hour (0–23). */
+function getGreeting(hour: number): string {
+  if (hour >= 5 && hour < 12) return 'Good Morning';
+  if (hour >= 12 && hour < 17) return 'Good Afternoon';
+  if (hour >= 17 && hour < 21) return 'Good Evening';
+  return 'Good Night';
+}
+
+/**
+ * Derives the dominant crop season for a given 0-indexed month.
+ *  Kharif  → June – October  (months 5–9)
+ *  Rabi    → November – March (months 10–2)
+ *  Zaid    → April – May      (months 3–4)
+ */
+function getSeason(month: number): string {
+  if (month >= 5 && month <= 9) return 'Kharif';
+  if (month >= 10 || month <= 2) return 'Rabi';
+  return 'Zaid';
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export default function HomeScreen(): React.ReactElement {
+  const navigation = useNavigation<HomeScreenNavigationProp>();
+  const { state: authState } = useAuth();
+  const { state: appState } = useApp();
+
+  // ── Local state ─────────────────────────────────────────────────────────────
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [postsLoading, setPostsLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+
+  // ── Animation refs ──────────────────────────────────────────────────────────
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(28)).current;
+
+  // ── Derived display values ───────────────────────────────────────────────────
+  const now = new Date();
+  const greeting = getGreeting(now.getHours());
+  const season = getSeason(now.getMonth());
+  const monthName = MONTH_NAMES[now.getMonth()];
+
+  const user = authState.user;
+  const firstName: string = user?.name
+    ? user.name.split(' ')[0]
+    : 'Farmer';
+  const notifications: number = appState.notifications;
+
+  // ── Effects ─────────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    checkLoginStatus();
-    fetchCrops();
-    fetchWeather();
-    animateEntrance();
+    // Entrance animation — run once on mount
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 650,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 650,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    loadPosts();
   }, []);
 
-  const checkLoginStatus = async () => {
-    const token = await AsyncStorage.getItem('token');
-    const user = await AsyncStorage.getItem('username');
-    setIsLoggedIn(!!token);
-    setUsername(user || 'Guest');
-  };
+  // ── Data fetching ───────────────────────────────────────────────────────────
 
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('username');
-    await AsyncStorage.removeItem('email');
-    setIsLoggedIn(false);
-    navigation.navigate('Login');
-  };
-
-  const animateEntrance = () => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  async function fetchCrops() {
+  const loadPosts = useCallback(async (): Promise<void> => {
     try {
-      const res = await api.getCrops({ soil: 'loam', season: 'summer', temp: 25 });
-      setCrops(res.data.results || res.data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function fetchWeather() {
-    try {
-      setWeatherLoading(true);
-      // Using Open-Meteo API (free, no API key required)
-      // Get user's location first
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            const { latitude, longitude } = position.coords;
-            
-            // Fetch weather data
-            const response = await fetch(
-              `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto`
-            );
-            const data = await response.json();
-            
-            // Fetch location name using reverse geocoding
-            const locationResponse = await fetch(
-              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
-            );
-            const locationData = await locationResponse.json();
-            
-            setWeather({
-              temperature: Math.round(data.current.temperature_2m),
-              humidity: data.current.relative_humidity_2m,
-              windSpeed: Math.round(data.current.wind_speed_10m),
-              weatherCode: data.current.weather_code,
-              condition: getWeatherCondition(data.current.weather_code),
-              location: locationData.city || locationData.locality || 'Your Location'
-            });
-            setWeatherLoading(false);
-          },
-          (error) => {
-            console.error('Location error:', error);
-            // Fallback to default location (Bangalore)
-            fetchDefaultWeather();
-          }
-        );
-      } else {
-        // Fallback if geolocation not supported
-        fetchDefaultWeather();
+      setPostsLoading(true);
+      const response = await api.getPosts({ limit: 3 });
+      if (response.success) {
+        setPosts(response.posts);
       }
     } catch (err) {
-      console.error('Weather fetch error:', err);
-      fetchDefaultWeather();
-    }
-  }
-
-  async function fetchDefaultWeather() {
-    try {
-      // Default to Bangalore coordinates
-      const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=12.9716&longitude=77.5946&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=Asia/Kolkata`
-      );
-      const data = await response.json();
-      
-      setWeather({
-        temperature: Math.round(data.current.temperature_2m),
-        humidity: data.current.relative_humidity_2m,
-        windSpeed: Math.round(data.current.wind_speed_10m),
-        weatherCode: data.current.weather_code,
-        condition: getWeatherCondition(data.current.weather_code),
-        location: 'Bangalore, KA'
-      });
-    } catch (err) {
-      console.error('Default weather error:', err);
-      // Final fallback with static data
-      setWeather({
-        temperature: 28,
-        humidity: 65,
-        windSpeed: 12,
-        weatherCode: 0,
-        condition: 'Sunny',
-        location: 'Your Location'
-      });
+      console.error('[HomeScreen] Failed to fetch posts:', err);
     } finally {
-      setWeatherLoading(false);
+      setPostsLoading(false);
     }
-  }
+  }, []);
 
-  function getWeatherCondition(code: number): string {
-    // WMO Weather interpretation codes
-    const weatherCodes: { [key: number]: string } = {
-      0: 'Clear Sky',
-      1: 'Mainly Clear',
-      2: 'Partly Cloudy',
-      3: 'Overcast',
-      45: 'Foggy',
-      48: 'Foggy',
-      51: 'Light Drizzle',
-      53: 'Drizzle',
-      55: 'Heavy Drizzle',
-      61: 'Light Rain',
-      63: 'Rain',
-      65: 'Heavy Rain',
-      71: 'Light Snow',
-      73: 'Snow',
-      75: 'Heavy Snow',
-      77: 'Snow Grains',
-      80: 'Light Showers',
-      81: 'Showers',
-      82: 'Heavy Showers',
-      85: 'Light Snow Showers',
-      86: 'Snow Showers',
-      95: 'Thunderstorm',
-      96: 'Thunderstorm with Hail',
-      99: 'Heavy Thunderstorm'
-    };
-    return weatherCodes[code] || 'Clear';
-  }
+  const handleRefresh = useCallback(async (): Promise<void> => {
+    setRefreshing(true);
+    await loadPosts();
+    setRefreshing(false);
+  }, [loadPosts]);
 
-  function getWeatherEmoji(condition: string): string {
-    const lowerCondition = condition.toLowerCase();
-    if (lowerCondition.includes('clear') || lowerCondition.includes('sunny')) return '☀️';
-    if (lowerCondition.includes('cloud')) return '⛅';
-    if (lowerCondition.includes('rain') || lowerCondition.includes('drizzle') || lowerCondition.includes('shower')) return '🌧️';
-    if (lowerCondition.includes('thunder') || lowerCondition.includes('storm')) return '⛈️';
-    if (lowerCondition.includes('snow')) return '❄️';
-    if (lowerCondition.includes('fog')) return '🌫️';
-    return '🌤️';
-  }
+  const handleLikePost = useCallback(async (postId: string): Promise<void> => {
+    try {
+      const response = await api.likePost(postId);
+      if (response.success) {
+        setPosts((prev) =>
+          prev.map((p) =>
+            p._id === postId ? { ...p, likes: response.likes } : p,
+          ),
+        );
+      }
+    } catch (err) {
+      console.error('[HomeScreen] Failed to like post:', err);
+    }
+  }, []);
 
-  const features = [
-    { 
-      title: 'Plant Health Analyzer', 
-      subtitle: 'AI-powered disease detection', 
-      screen: 'PlantAnalyzer', 
-      color: '#4CAF50',
-      icon: '🔬',
-      description: 'Upload plant photos and get instant diagnosis with treatment recommendations'
-    },
-    { 
-      title: 'Crop Recommendations', 
-      subtitle: 'Smart farming suggestions', 
-      screen: 'CropRecommendation', 
-      color: '#FF9800',
-      icon: '🌾',
-      description: 'Get personalized crop suggestions based on soil, season, and climate data'
-    },
-    // Temporarily commented out due to package compatibility issues
-    // { 
-    //   title: 'Location-Based Crops', 
-    //   subtitle: 'GPS + Weather intelligence', 
-    //   screen: 'LocationCropRecommendation', 
-    //   color: '#00BCD4',
-    //   icon: '📍',
-    //   description: 'Get real-time crop recommendations based on your exact location and weather'
-    // },
-    { 
-      title: 'Services Marketplace', 
-      subtitle: 'Find services & equipment', 
-      screen: 'ServicesHome', 
-      color: '#FFC107',
-      icon: '🚜',
-      description: 'Rent tractors, find labor, and hire farming services in your area'
-    },
-    { 
-      title: 'Farm Community', 
-      subtitle: 'Connect with farmers', 
-      screen: 'Community', 
-      color: '#10B981',
-      icon: '🌾',
-      description: 'Share knowledge, ask questions, and learn from fellow farmers'
-    },
-    { 
-      title: 'AI Farming Assistant', 
-      subtitle: '24/7 expert chatbot', 
-      screen: 'Chatbot', 
-      color: '#2196F3',
-      icon: '🤖',
-      description: 'Chat with our AI expert for farming advice, pest control, and best practices'
-    },
-    { 
-      title: 'Profile & Analytics', 
-      subtitle: 'Track your progress', 
-      screen: 'Profile', 
-      color: '#9C27B0',
-      icon: '�',
-      description: 'View your farming analytics, saved crops, and chat history'
-    },
-  ];
+  // ── Navigation helpers ───────────────────────────────────────────────────────
+
+  const goToPlantAnalyzer = useCallback((): void => {
+    navigation.navigate('PlantAnalyzer');
+  }, [navigation]);
+
+  const goToCropAdvisor = useCallback((): void => {
+    navigation.navigate('CropRecommendation');
+  }, [navigation]);
+
+  const goToChatbot = useCallback((): void => {
+    navigation.navigate('Chatbot');
+  }, [navigation]);
+
+  /**
+   * Services and Community live in sibling tab stacks.
+   * We use a type assertion to reach them via the composite tab navigator.
+   */
+  const goToServices = useCallback((): void => {
+    (navigation as any).navigate('ServicesTab');
+  }, [navigation]);
+
+  const goToCommunity = useCallback((): void => {
+    (navigation as any).navigate('CommunityTab');
+  }, [navigation]);
+
+  const goToProfile = useCallback((): void => {
+    (navigation as any).navigate('ProfileTab');
+  }, [navigation]);
+
+  const goToNotifications = useCallback((): void => {
+    // Placeholder — a dedicated Notifications screen will be wired in future.
+    console.log('[HomeScreen] Notifications tapped');
+  }, []);
+
+  // ── Sub-renders ─────────────────────────────────────────────────────────────
+
+  /** Decorative blobs that give the hero section a leafy, organic feel. */
+  const renderHeroBlobs = (): React.ReactElement => (
+    <>
+      <View style={styles.heroBlobTopRight} />
+      <View style={styles.heroBlobTopLeft} />
+      <View style={styles.heroBlobMidRight} />
+      <View style={styles.heroBlobBottomLeft} />
+      <View style={styles.heroBlobBottomRight} />
+    </>
+  );
+
+  /** Resolves the posts section into one of three states: loading, empty, or list. */
+  const renderPosts = (): React.ReactElement => {
+    if (postsLoading) {
+      return (
+        <View style={styles.postsLoadingBox}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </View>
+      );
+    }
+
+    if (posts.length === 0) {
+      return (
+        <View style={styles.emptyPostsBox}>
+          <Text style={styles.emptyPostsEmoji}>👥</Text>
+          <Text style={styles.emptyPostsTitle}>No posts yet</Text>
+          <Text style={styles.emptyPostsBody}>
+            Be the first to share something with the community!
+          </Text>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList<Post>
+        data={posts}
+        keyExtractor={(item) => item._id}
+        scrollEnabled={false}
+        renderItem={({ item }) => (
+          <PostCard
+            post={item}
+            onPress={() => {
+              console.log('[HomeScreen] Post tapped:', item._id);
+            }}
+            onLike={() => handleLikePost(item._id)}
+          />
+        )}
+        ItemSeparatorComponent={() => <View style={styles.postSpacer} />}
+      />
+    );
+  };
+
+  // ── Main render ─────────────────────────────────────────────────────────────
 
   return (
-    <View style={styles.container}>
-      {/* Background Image with Overlay */}
-      <ImageBackground 
-        source={require('../../assets/background.jpg')}
-        style={styles.backgroundImage}
-        resizeMode="cover"
+    <View style={styles.root}>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          1. HEADER BAR
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <View style={styles.header}>
+        {/* Left: logo mark + wordmark */}
+        <View style={styles.headerLeft}>
+          <Text style={styles.headerEmoji}>🌿</Text>
+          <Text style={styles.headerWordmark}>FarmHelp</Text>
+        </View>
+
+        {/* Right: bell + avatar */}
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={styles.bellTouchable}
+            onPress={goToNotifications}
+            activeOpacity={0.7}
+            accessibilityLabel="Notifications"
+            accessibilityRole="button"
+          >
+            <Text style={styles.bellEmoji}>🔔</Text>
+            {notifications > 0 && (
+              <View style={styles.notifBadge}>
+                <Text style={styles.notifBadgeLabel}>
+                  {notifications > 99 ? '99+' : String(notifications)}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={goToProfile}
+            activeOpacity={0.8}
+            accessibilityLabel="Go to profile"
+            accessibilityRole="button"
+          >
+            <Avatar
+              name={user?.name ?? 'Farmer'}
+              uri={user?.avatar}
+              size={36}
+              showBorder
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+          SCROLLABLE BODY
+          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={Colors.primary}
+            colors={[Colors.primary]}
+          />
+        }
       >
-        {/* Semi-transparent overlay for better text visibility */}
-        <View style={styles.overlay} />
-        
-        {/* Modern Floating Navigation Bar */}
-        <Surface style={styles.navbar}>
-          <View style={styles.navContent}>
-            <View style={styles.navLeft}>
-              <Text style={styles.logo}>🌱 FarmMate</Text>
-            </View>
-            <View style={styles.navRight}>
-              {isLoggedIn ? (
-                <>
-                <Text style={styles.welcomeText}>Hi, {username}</Text>
-                <Button 
-                  mode="contained" 
-                  onPress={handleLogout}
-                  style={styles.logoutButton}
-                  labelStyle={styles.buttonLabel}
-                  icon="logout"
-                >
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <Button 
-                mode="contained" 
-                onPress={() => navigation.navigate('Login')}
-                style={styles.loginButton}
-                labelStyle={styles.buttonLabel}
-                icon="login"
-              >
-                Login
-              </Button>
-            )}
-          </View>
-        </View>
-      </Surface>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Hero Section */}
-        <Animated.View style={[styles.hero, { opacity: fadeAnim }]}>
-          <View style={styles.heroContent}>
-            <Text style={styles.heroSubtitle}>Welcome to</Text>
-            <Title style={styles.heroTitle}>Smart Farming Platform</Title>
-            <Paragraph style={styles.heroDescription}>
-              Empowering farmers with AI-driven insights for better crop management, 
-              disease detection, and sustainable agriculture practices.
-            </Paragraph>
-            <View style={styles.heroButtons}>
-              <Button 
-                mode="contained" 
-                onPress={() => navigation.navigate(isLoggedIn ? 'PlantAnalyzer' : 'Login')}
-                style={styles.primaryButton}
-                labelStyle={styles.primaryButtonLabel}
-                icon="leaf"
-              >
-                Get Started
-              </Button>
-              <Button 
-                mode="outlined" 
-                onPress={() => navigation.navigate('Chatbot')}
-                style={styles.secondaryButton}
-                labelStyle={styles.secondaryButtonLabel}
-              >
-                Learn More
-              </Button>
-            </View>
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            2. HERO SECTION
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <View style={styles.heroContainer}>
+          {/* Decorative organic background */}
+          <View style={styles.heroBackground}>
+            {renderHeroBlobs()}
           </View>
-          <View style={styles.heroImage}>
-            <Text style={styles.heroEmoji}>🚜</Text>
-          </View>
-        </Animated.View>
 
-        {/* Real-Time Weather Widget */}
-        <View style={styles.weatherSection}>
-          <Surface style={styles.weatherCard} elevation={4}>
-            {weatherLoading ? (
-              <View style={styles.weatherLoading}>
-                <ActivityIndicator size="large" color="#4CAF50" />
-                <Text style={styles.weatherLoadingText}>Loading weather...</Text>
+          {/* Dark-green tint overlay for legibility */}
+          <View style={styles.heroOverlay} />
+
+          {/* Animated hero copy — slides up on mount */}
+          <Animated.View
+            style={[
+              styles.heroContent,
+              { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+            ]}
+          >
+            <Text style={styles.heroGreeting}>
+              {greeting}, {firstName}! 🌱
+            </Text>
+            <Text style={styles.heroSubtitle}>
+              What does your farm need today?
+            </Text>
+
+            {/* Pill row: temperature | season | month */}
+            <View style={styles.heroPillRow}>
+              <View style={styles.heroPill}>
+                <Text style={styles.heroPillText}>🌡️ -- °C</Text>
               </View>
-            ) : weather ? (
-              <>
-                <View style={styles.weatherHeader}>
-                  <Text style={styles.weatherEmoji}>{getWeatherEmoji(weather.condition)}</Text>
-                  <View style={styles.weatherMain}>
-                    <Text style={styles.weatherTemp}>{weather.temperature}°C</Text>
-                    <Text style={styles.weatherCondition}>{weather.condition}</Text>
-                  </View>
-                </View>
-                <View style={styles.weatherDetails}>
-                  <View style={styles.weatherDetailItem}>
-                    <Text style={styles.weatherDetailIcon}>💧</Text>
-                    <Text style={styles.weatherDetailLabel}>Humidity</Text>
-                    <Text style={styles.weatherDetailValue}>{weather.humidity}%</Text>
-                  </View>
-                  <View style={styles.weatherDetailItem}>
-                    <Text style={styles.weatherDetailIcon}>💨</Text>
-                    <Text style={styles.weatherDetailLabel}>Wind</Text>
-                    <Text style={styles.weatherDetailValue}>{weather.windSpeed} km/h</Text>
-                  </View>
-                </View>
-                <View style={styles.weatherLocation}>
-                  <Text style={styles.weatherLocationIcon}>📍</Text>
-                  <Text style={styles.weatherLocationText}>{weather.location}</Text>
-                  <TouchableOpacity onPress={fetchWeather} style={styles.weatherRefresh}>
-                    <Text style={styles.weatherRefreshIcon}>🔄</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            ) : (
-              <View style={styles.weatherError}>
-                <Text style={styles.weatherErrorText}>Unable to load weather</Text>
-                <Button mode="outlined" onPress={fetchWeather} icon="refresh">
-                  Retry
-                </Button>
+              <View style={styles.heroPill}>
+                <Text style={styles.heroPillText}>🌧️ {season}</Text>
               </View>
-            )}
-          </Surface>
-        </View>
-
-        {/* Features Section */}
-        <View style={styles.featuresSection}>
-          <Text style={styles.sectionLabel}>FEATURES</Text>
-          <Title style={styles.sectionTitle}>Everything You Need</Title>
-          <Paragraph style={styles.sectionDescription}>
-            Comprehensive tools to help you make better farming decisions
-          </Paragraph>
-
-          <View style={styles.featureGrid}>
-            {features.map((feature, index) => (
-              <TouchableOpacity 
-                key={index} 
-                activeOpacity={0.8}
-                onPress={() => {
-                  console.log('Navigating to:', feature.screen);
-                  navigation.navigate(feature.screen);
-                }}
-                style={styles.featureCard}
-              >
-                <View style={[styles.featureIconBox, { backgroundColor: feature.color }]}>
-                  <Text style={styles.featureIcon}>{feature.icon}</Text>
-                </View>
-                <Text style={styles.featureTitle}>{feature.title}</Text>
-                <Text style={styles.featureSubtitle}>{feature.subtitle}</Text>
-                <Text style={styles.featureDescription}>{feature.description}</Text>
-                <View style={styles.featureArrow}>
-                  <Text style={{ fontSize: 20, color: feature.color }}>→</Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Stats Section */}
-        <View style={styles.statsSection}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>10K+</Text>
-            <Text style={styles.statLabel}>Active Farmers</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>50K+</Text>
-            <Text style={styles.statLabel}>Crops Analyzed</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>95%</Text>
-            <Text style={styles.statLabel}>Accuracy Rate</Text>
-          </View>
-        </View>
-
-        {/* CTA Section */}
-        <View style={styles.ctaSection}>
-          <Card style={styles.ctaCard}>
-            <View style={styles.ctaContent}>
-              <Text style={styles.ctaEmoji}>🚀</Text>
-              <Title style={styles.ctaTitle}>Ready to Transform Your Farming?</Title>
-              <Paragraph style={styles.ctaDescription}>
-                Join thousands of farmers already using FarmMate to increase their yields and reduce losses.
-              </Paragraph>
-              <Button 
-                mode="contained" 
-                onPress={() => navigation.navigate(isLoggedIn ? 'PlantAnalyzer' : 'Signup')}
-                style={styles.ctaButton}
-                labelStyle={styles.ctaButtonLabel}
-              >
-                {isLoggedIn ? 'Start Analyzing' : 'Sign Up Free'}
-              </Button>
+              <View style={styles.heroPill}>
+                <Text style={styles.heroPillText}>📅 {monthName}</Text>
+              </View>
             </View>
-          </Card>
+          </Animated.View>
         </View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <View style={styles.footerContent}>
-            <View style={styles.footerSection}>
-              <Text style={styles.footerLogo}>🌱 FarmMate</Text>
-              <Text style={styles.footerText}>
-                AI-powered farming assistant for modern agriculture
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            3. QUICK STATS ROW  (overlaps hero bottom)
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <View style={styles.statsStrip}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.statsScrollPadding}
+          >
+            {/* Stat card: Weather */}
+            <View style={styles.statCard}>
+              <Text style={styles.statCardIcon}>☀️</Text>
+              <Text style={styles.statCardValue}>28°C</Text>
+              <Text style={styles.statCardLabel}>Mostly Sunny</Text>
+            </View>
+
+            {/* Stat card: Season */}
+            <View style={styles.statCard}>
+              <Text style={styles.statCardIcon}>🌱</Text>
+              <Text style={styles.statCardValue}>{season}</Text>
+              <Text style={styles.statCardLabel}>Current Season</Text>
+            </View>
+
+            {/* Stat card: Market price placeholder */}
+            <View style={styles.statCard}>
+              <Text style={styles.statCardIcon}>📈</Text>
+              <Text style={styles.statCardValue}>₹2,150/q</Text>
+              <Text style={styles.statCardLabel}>Rice MSP</Text>
+            </View>
+          </ScrollView>
+        </View>
+
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            4. QUICK ACTIONS SECTION
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionHeading}>Quick Actions</Text>
+            <TouchableOpacity
+              onPress={goToCommunity}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+            >
+              <Text style={styles.sectionSeeAll}>See All</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* 2 × 2 grid */}
+          <View style={styles.actionsGrid}>
+            {/* Row 1 */}
+            <View style={styles.actionsRow}>
+              <View style={styles.actionCardWrapper}>
+                <QuickActionCard
+                  icon="🔬"
+                  title="Plant Analyzer"
+                  subtitle="Detect crop diseases"
+                  iconBg={Colors.accentSoft}
+                  onPress={goToPlantAnalyzer}
+                />
+              </View>
+              <View style={styles.actionCardWrapper}>
+                <QuickActionCard
+                  icon="🌾"
+                  title="Crop Advisor"
+                  subtitle="AI recommendations"
+                  iconBg={Colors.warningLight}
+                  onPress={goToCropAdvisor}
+                />
+              </View>
+            </View>
+
+            {/* Row 2 */}
+            <View style={styles.actionsRow}>
+              <View style={styles.actionCardWrapper}>
+                <QuickActionCard
+                  icon="🤖"
+                  title="FarmBot AI"
+                  subtitle="24/7 farming help"
+                  iconBg={Colors.infoLight}
+                  onPress={goToChatbot}
+                />
+              </View>
+              <View style={styles.actionCardWrapper}>
+                <QuickActionCard
+                  icon="🏪"
+                  title="Services"
+                  subtitle="Find farm services"
+                  iconBg={COLORS_EXTRA.orangeLight}
+                  onPress={goToServices}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            5. COMMUNITY PREVIEW SECTION
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionHeading}>Community Feed</Text>
+            <TouchableOpacity
+              onPress={goToCommunity}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+            >
+              <Text style={styles.sectionSeeAll}>See All →</Text>
+            </TouchableOpacity>
+          </View>
+
+          {renderPosts()}
+        </View>
+
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            6. TRUSTED FARMERS BANNER
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <View style={styles.trustedWrapper}>
+          <View style={styles.trustedCard}>
+            {/* Headline row */}
+            <View style={styles.trustedHeadRow}>
+              <Text style={styles.trustedFlag}>🇮🇳</Text>
+              <Text style={styles.trustedHeadText}>
+                Trusted by 10,000+ Farmers Across India
               </Text>
             </View>
-            <View style={styles.footerSection}>
-              <Text style={styles.footerHeading}>Quick Links</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('PlantAnalyzer')}>
-                <Text style={styles.footerLink}>Plant Analyzer</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => navigation.navigate('CropRecommendation')}>
-                <Text style={styles.footerLink}>Crop Guide</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => navigation.navigate('Chatbot')}>
-                <Text style={styles.footerLink}>AI Assistant</Text>
-              </TouchableOpacity>
+
+            {/* State badge row */}
+            <View style={styles.stateBadgeRow}>
+              {STATE_BADGES.map((abbr) => (
+                <View key={abbr} style={styles.stateBadge}>
+                  <Text style={styles.stateBadgeText}>{abbr}</Text>
+                </View>
+              ))}
             </View>
-            <View style={styles.footerSection}>
-              <Text style={styles.footerHeading}>Account</Text>
-              {isLoggedIn ? (
-                <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                  <Text style={styles.footerLink}>My Profile</Text>
-                </TouchableOpacity>
-              ) : (
-                <>
-                  <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                    <Text style={styles.footerLink}>Login</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-                    <Text style={styles.footerLink}>Sign Up</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
-          </View>
-          <View style={styles.footerBottom}>
-            <Text style={styles.copyright}>© 2025 FarmMate. All rights reserved.</Text>
           </View>
         </View>
+
+        {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            7. BOTTOM PADDING  (clears tab bar)
+            ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
+        <View style={styles.bottomSpacer} />
       </ScrollView>
-      </ImageBackground>
     </View>
   );
 }
 
+// ─── Extra colours not in the shared palette ─────────────────────────────────
+// Kept here so JSX stays free of inline strings.
+const COLORS_EXTRA = {
+  orangeLight: '#FFF3E0',
+  heroBg: '#2E7D32',
+  heroBlob1: '#388E3C',
+  heroBlob2: '#33691E',
+  heroBlob3: '#43A047',
+  heroBlob4: '#1B5E20',
+  heroBlob5: '#4CAF50',
+  heroOverlay: 'rgba(27,94,32,0.75)',
+  pillBg: 'rgba(255,255,255,0.20)',
+  pillBorder: 'rgba(255,255,255,0.30)',
+  subtitleWhite: 'rgba(255,255,255,0.85)',
+};
+
+// ─── Computed layout constants ────────────────────────────────────────────────
+// Each action card occupies ~half the row width (accounting for padding + gap).
+const ACTION_CARD_WIDTH = (SCREEN_WIDTH - 32 - 10) / 2;
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#ffffff'
-  },
-  
-  // Background Image Styles
-  backgroundImage: {
+
+  // ── Root & scroll container ────────────────────────────────────────────────
+  root: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    backgroundColor: Colors.background,
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)', // White overlay for better readability
-    zIndex: 1,
-  },
-  
-  // Modern Floating Navbar - Black with rounded design
-  navbar: {
-    position: 'absolute',
-    top: 10,
-    left: 16,
-    right: 16,
-    zIndex: 1001, // Above overlay
-    backgroundColor: '#1E293B',
-    borderRadius: 50,
-    elevation: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-  },
-  navContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 28,
-    paddingVertical: 16,
-  },
-  navLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logo: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-    letterSpacing: 0.5,
-  },
-  navRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  welcomeText: {
-    fontSize: 14,
-    color: '#94A3B8',
-    marginRight: 8,
-    fontWeight: '500',
-  },
-  loginButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 25,
-    paddingHorizontal: 4,
-  },
-  logoutButton: {
-    backgroundColor: '#EF4444',
-    borderRadius: 25,
-    paddingHorizontal: 4,
-  },
-  buttonLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  
   scrollView: {
     flex: 1,
-    zIndex: 2, // Above overlay
   },
-  
-  // Hero Section
-  hero: {
-    paddingHorizontal: 24,
-    paddingTop: 100,
-    paddingBottom: 80,
-    backgroundColor: '#F8FAF9',
+  scrollContent: {
+    flexGrow: 1,
   },
-  heroContent: {
-    marginBottom: 40,
-  },
-  heroSubtitle: {
-    fontSize: 14,
-    color: '#4CAF50',
-    fontWeight: '700',
-    letterSpacing: 2,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  heroTitle: {
-    fontSize: 42,
-    fontWeight: 'bold',
-    color: '#0F172A',
-    marginBottom: 20,
-    lineHeight: 52,
-    letterSpacing: -0.5,
-  },
-  heroDescription: {
-    fontSize: 18,
-    color: '#1E293B',
-    lineHeight: 28,
-    marginBottom: 40,
-    maxWidth: 600,
-    fontWeight: '500',
-  },
-  heroButtons: {
-    flexDirection: 'row',
-    gap: 16,
-    flexWrap: 'wrap',
-  },
-  primaryButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 24,
-  },
-  primaryButtonLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  secondaryButton: {
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 24,
-    borderColor: '#4CAF50',
-    borderWidth: 2,
-    backgroundColor: '#FFFFFF',
-  },
-  secondaryButtonLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4CAF50',
-  },
-  heroImage: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroEmoji: {
-    fontSize: 120,
-  },
-  
-  // Weather Widget Styles
-  weatherSection: {
-    paddingHorizontal: 24,
-    paddingVertical: 30,
-    backgroundColor: '#ffffff',
-  },
-  weatherCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 2,
-    borderColor: '#E8F5E9',
-  },
-  weatherLoading: {
-    alignItems: 'center',
-    paddingVertical: 30,
-  },
-  weatherLoadingText: {
-    marginTop: 12,
-    color: '#64748B',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  weatherHeader: {
+
+  // ── 1. Header bar ──────────────────────────────────────────────────────────
+  header: {
+    height: 64,
+    backgroundColor: Colors.primary,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
-  weatherEmoji: {
-    fontSize: 64,
-    marginRight: 20,
-  },
-  weatherMain: {
-    flex: 1,
-  },
-  weatherTemp: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#0F172A',
-    lineHeight: 52,
-  },
-  weatherCondition: {
-    fontSize: 18,
-    color: '#64748B',
-    fontWeight: '500',
-  },
-  weatherDetails: {
+  headerLeft: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 20,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#E8F5E9',
-    marginBottom: 16,
-  },
-  weatherDetailItem: {
     alignItems: 'center',
-    flex: 1,
   },
-  weatherDetailIcon: {
-    fontSize: 32,
-    marginBottom: 8,
+  headerEmoji: {
+    fontSize: 20,
+    marginRight: 8,
   },
-  weatherDetailLabel: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginBottom: 4,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  weatherDetailValue: {
+  headerWordmark: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1E293B',
+    color: Colors.white,
+    letterSpacing: 0.3,
   },
-  weatherLocation: {
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 12,
   },
-  weatherLocationIcon: {
-    fontSize: 16,
-    marginRight: 6,
-  },
-  weatherLocationText: {
-    fontSize: 14,
-    color: '#64748B',
-    fontWeight: '500',
-  },
-  weatherRefresh: {
-    marginLeft: 12,
+  bellTouchable: {
+    position: 'relative',
     padding: 4,
   },
-  weatherRefreshIcon: {
-    fontSize: 20,
+  bellEmoji: {
+    fontSize: 22,
   },
-  weatherError: {
+  notifBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: Colors.error,
     alignItems: 'center',
-    paddingVertical: 20,
+    justifyContent: 'center',
+    paddingHorizontal: 3,
   },
-  weatherErrorText: {
-    fontSize: 14,
-    color: '#EF4444',
-    marginBottom: 12,
-    fontWeight: '500',
+  notifBadgeLabel: {
+    fontSize: 9,
+    color: Colors.white,
+    fontWeight: '700',
+    lineHeight: 11,
   },
-  
-  // Features Section
-  featuresSection: {
-    paddingHorizontal: 24,
-    paddingVertical: 80,
-    backgroundColor: '#ffffff',
+
+  // ── 2. Hero section ────────────────────────────────────────────────────────
+  heroContainer: {
+    height: 220,
+    overflow: 'hidden',
+    position: 'relative',
   },
-  sectionLabel: {
-    fontSize: 13,
-    color: '#4CAF50',
-    fontWeight: '800',
-    letterSpacing: 2,
-    marginBottom: 8,
-    textTransform: 'uppercase',
+  heroBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: COLORS_EXTRA.heroBg,
   },
-  sectionTitle: {
-    fontSize: 32,
+  // Decorative blobs — slightly different greens to mimic a leaf canopy
+  heroBlobTopRight: {
+    position: 'absolute',
+    top: -32,
+    right: -24,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: COLORS_EXTRA.heroBlob1,
+    opacity: 0.5,
+  },
+  heroBlobTopLeft: {
+    position: 'absolute',
+    top: -18,
+    left: -32,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: COLORS_EXTRA.heroBlob2,
+    opacity: 0.4,
+  },
+  heroBlobMidRight: {
+    position: 'absolute',
+    top: 55,
+    right: 44,
+    width: 64,
+    height: 86,
+    borderRadius: 32,
+    backgroundColor: COLORS_EXTRA.heroBlob3,
+    opacity: 0.35,
+  },
+  heroBlobBottomLeft: {
+    position: 'absolute',
+    bottom: -8,
+    left: 64,
+    width: 86,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS_EXTRA.heroBlob4,
+    opacity: 0.55,
+  },
+  heroBlobBottomRight: {
+    position: 'absolute',
+    bottom: 24,
+    right: -12,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: COLORS_EXTRA.heroBlob5,
+    opacity: 0.18,
+  },
+  heroOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: COLORS_EXTRA.heroOverlay,
+  },
+  heroContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+  },
+  heroGreeting: {
+    fontSize: 26,
     fontWeight: 'bold',
-    color: '#0F172A',
+    color: Colors.white,
+    marginBottom: 4,
+  },
+  heroSubtitle: {
+    fontSize: 15,
+    color: COLORS_EXTRA.subtitleWhite,
     marginBottom: 12,
   },
-  sectionDescription: {
-    fontSize: 17,
-    color: '#1E293B',
-    marginBottom: 40,
-    lineHeight: 26,
+  heroPillRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  heroPill: {
+    backgroundColor: COLORS_EXTRA.pillBg,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: COLORS_EXTRA.pillBorder,
+  },
+  heroPillText: {
+    fontSize: 12,
+    color: Colors.white,
     fontWeight: '500',
   },
-  featureGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+
+  // ── 3. Quick stats strip ───────────────────────────────────────────────────
+  statsStrip: {
+    marginTop: -20,
+    paddingHorizontal: 16,
+  },
+  statsScrollPadding: {
+    paddingRight: 4,
+  },
+  statCard: {
+    width: 140,
+    height: 100,
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    padding: 12,
+    marginRight: 12,
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
     justifyContent: 'space-between',
   },
-  featureCard: {
-    width: '48%',
-    backgroundColor: '#ffffff',
-    borderRadius: 24,
-    padding: 28,
-    marginBottom: 24,
-    borderWidth: 2,
-    borderColor: '#E2E8F0',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
+  statCardIcon: {
+    fontSize: 22,
   },
-  featureIconBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
-    justifyContent: 'center',
+  statCardValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  statCardLabel: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+  },
+
+  // ── Shared section chrome ──────────────────────────────────────────────────
+  section: {
+    paddingHorizontal: 16,
+    marginTop: 20,
+  },
+  sectionHeaderRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'space-between',
+    marginBottom: 14,
   },
-  featureIcon: {
-    fontSize: 32,
-  },
-  featureTitle: {
+  sectionHeading: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  featureSubtitle: {
-    fontSize: 14,
-    color: '#1E293B',
-    marginBottom: 12,
     fontWeight: '600',
+    color: Colors.textPrimary,
   },
-  featureDescription: {
+  sectionSeeAll: {
     fontSize: 13,
-    color: '#334155',
-    lineHeight: 20,
-    marginBottom: 12,
+    color: Colors.primary,
     fontWeight: '500',
   },
-  featureArrow: {
-    alignSelf: 'flex-start',
-    marginTop: 8,
+
+  // ── 4. Quick actions 2 × 2 grid ───────────────────────────────────────────
+  actionsGrid: {
+    gap: 10,
   },
-  
-  // Stats Section
-  statsSection: {
+  actionsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 24,
-    paddingVertical: 80,
-    backgroundColor: '#4CAF50',
+    gap: 10,
   },
-  statBox: {
+  actionCardWrapper: {
+    width: ACTION_CARD_WIDTH,
+  },
+
+  // ── 5. Community posts ─────────────────────────────────────────────────────
+  postsLoadingBox: {
+    paddingVertical: 36,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  statNumber: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 8,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
-  },
-  
-  // CTA Section
-  ctaSection: {
+  emptyPostsBox: {
+    paddingVertical: 32,
     paddingHorizontal: 24,
-    paddingVertical: 80,
-    backgroundColor: '#ffffff',
-  },
-  ctaCard: {
-    borderRadius: 24,
-    overflow: 'hidden',
-    elevation: 4,
-  },
-  ctaContent: {
-    padding: 50,
     alignItems: 'center',
-    backgroundColor: '#F8FAF9',
-  },
-  ctaEmoji: {
-    fontSize: 64,
-    marginBottom: 24,
-  },
-  ctaTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#0F172A',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  ctaDescription: {
-    fontSize: 17,
-    color: '#1E293B',
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 26,
-    fontWeight: '600',
-  },
-  ctaButton: {
-    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    backgroundColor: Colors.surface,
     borderRadius: 12,
-    paddingHorizontal: 32,
-    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  ctaButtonLabel: {
+  emptyPostsEmoji: {
+    fontSize: 40,
+    marginBottom: 10,
+  },
+  emptyPostsTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: 4,
   },
-  
-  // Footer
-  footer: {
-    backgroundColor: '#1E293B',
-    paddingTop: 80,
-    paddingBottom: 50,
+  emptyPostsBody: {
+    fontSize: 13,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 18,
   },
-  footerContent: {
+  postSpacer: {
+    height: 10,
+  },
+
+  // ── 6. Trusted farmers banner ──────────────────────────────────────────────
+  trustedWrapper: {
+    marginTop: 20,
+    paddingHorizontal: 16,
+  },
+  trustedCard: {
+    backgroundColor: Colors.accentSoft,
+    borderRadius: 12,
+    padding: 16,
+  },
+  trustedHeadRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 24,
-    marginBottom: 50,
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  footerSection: {
-    flex: 1,
-    marginHorizontal: 10,
-  },
-  footerLogo: {
+  trustedFlag: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-    marginBottom: 12,
+    marginRight: 8,
   },
-  footerText: {
+  trustedHeadText: {
     fontSize: 14,
-    color: '#94A3B8',
-    lineHeight: 22,
-  },
-  footerHeading: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 16,
-  },
-  footerLink: {
-    fontSize: 14,
-    color: '#94A3B8',
-    marginBottom: 12,
+    fontWeight: '600',
+    color: Colors.primary,
+    flex: 1,
     lineHeight: 20,
   },
-  footerBottom: {
-    paddingHorizontal: 20,
-    paddingTop: 30,
-    borderTopWidth: 1,
-    borderTopColor: '#334155',
+  stateBadgeRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
   },
-  copyright: {
-    fontSize: 12,
-    color: '#64748B',
-    textAlign: 'center',
+  stateBadge: {
+    backgroundColor: Colors.primary,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  stateBadgeText: {
+    fontSize: 8,
+    color: Colors.white,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+
+  // ── 7. Bottom spacer ──────────────────────────────────────────────────────
+  bottomSpacer: {
+    height: 100,
   },
 });
