@@ -304,10 +304,7 @@ function MainTabNavigator() {
         tabBarActiveTintColor: '#4CAF50',
         tabBarInactiveTintColor: 'gray',
         headerShown: false, // Each stack has its own headers
-        tabBarStyle: {
-          paddingBottom: Platform.OS === 'ios' ? 20 : 5,
-          height: Platform.OS === 'ios' ? 85 : 60,
-        },
+        tabBarStyle: { display: 'none' },
       })}
     >
       <Tab.Screen

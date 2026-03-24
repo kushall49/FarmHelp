@@ -20,11 +20,12 @@ import {
   Button,
   IconButton,
 } from 'react-native-paper';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused } from '@react-navigation/native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import api from '../services/api';
 import ServiceCard from '../components/ServiceCard';
 import JobCard from '../components/JobCard';
+import TopNavigation from '../components/TopNavigation';
 import { useSafeGoBack } from '../navigation/AppNavigator';
 
 const { width } = Dimensions.get('window');
@@ -78,6 +79,7 @@ const KARNATAKA_DISTRICTS = [
 ];
 
 export default function ServicesHomeScreen({ navigation, route }: any) {
+  const isFocused = useIsFocused();
   const [activeTab, setActiveTab] = useState<'services' | 'jobs'>(
     route.params?.initialTab || 'services'
   );
@@ -195,6 +197,7 @@ export default function ServicesHomeScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
+      <TopNavigation activeTab="Services" />
       {/* Header */}
       <Surface style={styles.header}>
         <View style={styles.headerTop}>
@@ -348,7 +351,7 @@ export default function ServicesHomeScreen({ navigation, route }: any) {
       {/* Floating Action Button */}
       <Portal>
         <FAB.Group
-          visible={true}
+          visible={isFocused}
           open={fabOpen}
           icon={fabOpen ? 'close' : 'plus'}
           actions={[

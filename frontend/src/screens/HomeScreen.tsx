@@ -1,23 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Animated, Dimensions, Image, ImageBackground } from 'react-native';
-import { Title, Card, Paragraph, ActivityIndicator, Text, Surface, Button, IconButton } from 'react-native-paper';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, Linking, ScrollView, StyleSheet, TouchableOpacity, Animated, Dimensions, Image, ImageBackground, TextInput } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Title, Card, Paragraph, ActivityIndicator, Text, Surface, Button } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import api from '../services/api';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import TopNavigation from '../components/TopNavigation';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }: any) {
-  const [crops, setCrops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('Guest');
   const [weather, setWeather] = useState<any>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
-  const fadeAnim = new Animated.Value(0);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     checkLoginStatus();
-    fetchCrops();
     fetchWeather();
     animateEntrance();
   }, []);
@@ -29,14 +29,6 @@ export default function HomeScreen({ navigation }: any) {
     setUsername(user || 'Guest');
   };
 
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('username');
-    await AsyncStorage.removeItem('email');
-    setIsLoggedIn(false);
-    navigation.navigate('Login');
-  };
-
   const animateEntrance = () => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -45,39 +37,22 @@ export default function HomeScreen({ navigation }: any) {
     }).start();
   };
 
-  async function fetchCrops() {
-    try {
-      const res = await api.getCrops({ soil: 'loam', season: 'summer', temp: 25 });
-      setCrops(res.data.results || res.data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function fetchWeather() {
     try {
       setWeatherLoading(true);
-      // Using Open-Meteo API (free, no API key required)
-      // Get user's location first
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
             const { latitude, longitude } = position.coords;
-            
-            // Fetch weather data
             const response = await fetch(
               `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto`
             );
             const data = await response.json();
-            
-            // Fetch location name using reverse geocoding
             const locationResponse = await fetch(
               `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
             );
             const locationData = await locationResponse.json();
-            
+
             setWeather({
               temperature: Math.round(data.current.temperature_2m),
               humidity: data.current.relative_humidity_2m,
@@ -88,30 +63,22 @@ export default function HomeScreen({ navigation }: any) {
             });
             setWeatherLoading(false);
           },
-          (error) => {
-            console.error('Location error:', error);
-            // Fallback to default location (Bangalore)
-            fetchDefaultWeather();
-          }
+          (error) => fetchDefaultWeather()
         );
       } else {
-        // Fallback if geolocation not supported
         fetchDefaultWeather();
       }
     } catch (err) {
-      console.error('Weather fetch error:', err);
       fetchDefaultWeather();
     }
   }
 
   async function fetchDefaultWeather() {
     try {
-      // Default to Bangalore coordinates
       const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=12.9716&longitude=77.5946&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=Asia/Kolkata`
+        'https://api.open-meteo.com/v1/forecast?latitude=12.9716&longitude=77.5946&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto'
       );
       const data = await response.json();
-      
       setWeather({
         temperature: Math.round(data.current.temperature_2m),
         humidity: data.current.relative_humidity_2m,
@@ -121,15 +88,8 @@ export default function HomeScreen({ navigation }: any) {
         location: 'Bangalore, KA'
       });
     } catch (err) {
-      console.error('Default weather error:', err);
-      // Final fallback with static data
       setWeather({
-        temperature: 28,
-        humidity: 65,
-        windSpeed: 12,
-        weatherCode: 0,
-        condition: 'Sunny',
-        location: 'Your Location'
+        temperature: 28, humidity: 65, windSpeed: 12, condition: 'Sunny', location: 'Your Location'
       });
     } finally {
       setWeatherLoading(false);
@@ -137,813 +97,666 @@ export default function HomeScreen({ navigation }: any) {
   }
 
   function getWeatherCondition(code: number): string {
-    // WMO Weather interpretation codes
     const weatherCodes: { [key: number]: string } = {
-      0: 'Clear Sky',
-      1: 'Mainly Clear',
-      2: 'Partly Cloudy',
-      3: 'Overcast',
-      45: 'Foggy',
-      48: 'Foggy',
-      51: 'Light Drizzle',
-      53: 'Drizzle',
-      55: 'Heavy Drizzle',
-      61: 'Light Rain',
-      63: 'Rain',
-      65: 'Heavy Rain',
-      71: 'Light Snow',
-      73: 'Snow',
-      75: 'Heavy Snow',
-      77: 'Snow Grains',
-      80: 'Light Showers',
-      81: 'Showers',
-      82: 'Heavy Showers',
-      85: 'Light Snow Showers',
-      86: 'Snow Showers',
-      95: 'Thunderstorm',
-      96: 'Thunderstorm with Hail',
-      99: 'Heavy Thunderstorm'
+      0: 'Clear Sky', 1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
+      45: 'Foggy', 48: 'Foggy', 51: 'Light Drizzle', 61: 'Light Rain',
+      63: 'Rain', 65: 'Heavy Rain', 71: 'Light Snow', 95: 'Thunderstorm'
     };
     return weatherCodes[code] || 'Clear';
   }
 
-  function getWeatherEmoji(condition: string): string {
+  function getWeatherIcon(condition: string) {
+    if (!condition) return { name: 'weather-partly-cloudy', color: '#F59E0B' };
     const lowerCondition = condition.toLowerCase();
-    if (lowerCondition.includes('clear') || lowerCondition.includes('sunny')) return '☀️';
-    if (lowerCondition.includes('cloud')) return '⛅';
-    if (lowerCondition.includes('rain') || lowerCondition.includes('drizzle') || lowerCondition.includes('shower')) return '🌧️';
-    if (lowerCondition.includes('thunder') || lowerCondition.includes('storm')) return '⛈️';
-    if (lowerCondition.includes('snow')) return '❄️';
-    if (lowerCondition.includes('fog')) return '🌫️';
-    return '🌤️';
+    if (lowerCondition.includes('clear')) return { name: 'weather-sunny', color: '#F59E0B' };
+    if (lowerCondition.includes('cloud') || lowerCondition.includes('overcast')) return { name: 'weather-cloudy', color: '#64748B' };
+    if (lowerCondition.includes('rain') || lowerCondition.includes('drizzle')) return { name: 'weather-pouring', color: '#3B82F6' };
+    if (lowerCondition.includes('thunder') || lowerCondition.includes('storm')) return { name: 'weather-lightning', color: '#8B5CF6' };
+    if (lowerCondition.includes('fog')) return { name: 'weather-fog', color: '#94A3B8' };
+    return { name: 'weather-partly-cloudy', color: '#F59E0B' };
   }
 
   const features = [
-    { 
-      title: 'Plant Health Analyzer', 
-      subtitle: 'AI-powered disease detection', 
-      screen: 'PlantAnalyzer', 
-      color: '#4CAF50',
-      icon: '🔬',
-      description: 'Upload plant photos and get instant diagnosis with treatment recommendations'
-    },
-    { 
-      title: 'Crop Recommendations', 
-      subtitle: 'Smart farming suggestions', 
-      screen: 'CropRecommendation', 
-      color: '#FF9800',
-      icon: '🌾',
-      description: 'Get personalized crop suggestions based on soil, season, and climate data'
-    },
-    // Temporarily commented out due to package compatibility issues
-    // { 
-    //   title: 'Location-Based Crops', 
-    //   subtitle: 'GPS + Weather intelligence', 
-    //   screen: 'LocationCropRecommendation', 
-    //   color: '#00BCD4',
-    //   icon: '📍',
-    //   description: 'Get real-time crop recommendations based on your exact location and weather'
-    // },
-    { 
-      title: 'Services Marketplace', 
-      subtitle: 'Find services & equipment', 
-      screen: 'ServicesHome', 
-      color: '#FFC107',
-      icon: '🚜',
-      description: 'Rent tractors, find labor, and hire farming services in your area'
-    },
-    { 
-      title: 'Farm Community', 
-      subtitle: 'Connect with farmers', 
-      screen: 'Community', 
-      color: '#10B981',
-      icon: '🌾',
-      description: 'Share knowledge, ask questions, and learn from fellow farmers'
-    },
-    { 
-      title: 'AI Farming Assistant', 
-      subtitle: '24/7 expert chatbot', 
-      screen: 'Chatbot', 
-      color: '#2196F3',
-      icon: '🤖',
-      description: 'Chat with our AI expert for farming advice, pest control, and best practices'
-    },
-    { 
-      title: 'Profile & Analytics', 
-      subtitle: 'Track your progress', 
-      screen: 'Profile', 
-      color: '#9C27B0',
-      icon: '�',
-      description: 'View your farming analytics, saved crops, and chat history'
-    },
+    { title: 'Plant Analyzer', subtitle: 'AI-powered disease detection', screen: 'PlantAnalyzer', color: '#10B981', iconName: 'leaf', description: 'Upload plant photos and get an instant, accurate health diagnosis.' },
+    { title: 'Crop Suggestions', subtitle: 'Smart farming suggestions', screen: 'CropRecommendation', color: '#F59E0B', iconName: 'sprout', description: 'Personalized crop recommendations based on your soil and climate data.' },
+    { title: 'AI Assistant', subtitle: '24/7 expert chatbot', screen: 'Chatbot', color: '#3B82F6', iconName: 'robot-outline', description: 'Chat with our AI farming expert for instant guidance and personalized advice.' },
   ];
 
   return (
     <View style={styles.container}>
-      {/* Background Image with Overlay */}
-      <ImageBackground 
-        source={require('../../assets/background.jpg')}
-        style={styles.backgroundImage}
-        resizeMode="cover"
-      >
-        {/* Semi-transparent overlay for better text visibility */}
-        <View style={styles.overlay} />
-        
-        {/* Modern Floating Navigation Bar */}
-        <Surface style={styles.navbar}>
-          <View style={styles.navContent}>
-            <View style={styles.navLeft}>
-              <Text style={styles.logo}>🌱 FarmMate</Text>
-            </View>
-            <View style={styles.navRight}>
-              {isLoggedIn ? (
-                <>
-                <Text style={styles.welcomeText}>Hi, {username}</Text>
-                <Button 
-                  mode="contained" 
-                  onPress={handleLogout}
-                  style={styles.logoutButton}
-                  labelStyle={styles.buttonLabel}
-                  icon="logout"
-                >
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <Button 
-                mode="contained" 
-                onPress={() => navigation.navigate('Login')}
-                style={styles.loginButton}
-                labelStyle={styles.buttonLabel}
-                icon="login"
-              >
-                Login
-              </Button>
-            )}
-          </View>
-        </View>
-      </Surface>
+      <Image source={require('../../assets/background.jpg')} style={styles.fixedBg} resizeMode="cover" />
+      <TopNavigation activeTab="Home" />
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Hero Section */}
-        <Animated.View style={[styles.hero, { opacity: fadeAnim }]}>
-          <View style={styles.heroContent}>
-            <Text style={styles.heroSubtitle}>Welcome to</Text>
-            <Title style={styles.heroTitle}>Smart Farming Platform</Title>
-            <Paragraph style={styles.heroDescription}>
-              Empowering farmers with AI-driven insights for better crop management, 
-              disease detection, and sustainable agriculture practices.
-            </Paragraph>
-            <View style={styles.heroButtons}>
-              <Button 
-                mode="contained" 
-                onPress={() => navigation.navigate(isLoggedIn ? 'PlantAnalyzer' : 'Login')}
-                style={styles.primaryButton}
-                labelStyle={styles.primaryButtonLabel}
-                icon="leaf"
-              >
-                Get Started
-              </Button>
-              <Button 
-                mode="outlined" 
-                onPress={() => navigation.navigate('Chatbot')}
-                style={styles.secondaryButton}
-                labelStyle={styles.secondaryButtonLabel}
-              >
-                Learn More
-              </Button>
+
+        {/* Hero Text Section */}
+        <Animated.View style={[styles.heroSection, { opacity: fadeAnim }]}>
+          <View style={styles.badgeContainer}>
+            <View style={styles.badgeDot} />
+            <Text style={styles.badgeText}>Top Notch Farming Platform</Text>
+          </View>
+
+          <Text style={styles.mainTitle}>
+            Regenerating The Earth{'\n'}With AI-Powered Farming
+          </Text>
+
+          <TouchableOpacity
+            style={styles.heroButton}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate(isLoggedIn ? 'PlantAnalyzer' : 'Login')}
+          >
+            <Text style={styles.heroButtonText}>Get Started</Text>
+            <Icon name="arrow-right" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
+          </TouchableOpacity>
+
+            <View style={styles.quoteContainer}>
+              <Icon name="format-quote-open" size={28} color="rgba(255, 255, 255, 0.9)" />
+              <Text style={styles.quoteText}>
+                {"\"The ultimate goal of farming is not the growing of crops, but the cultivation and perfection of human beings.\""}
+              </Text>
+              <Text style={styles.quoteAuthor}>— Masanobu Fukuoka</Text>
             </View>
-          </View>
-          <View style={styles.heroImage}>
-            <Text style={styles.heroEmoji}>🚜</Text>
-          </View>
-        </Animated.View>
+          </Animated.View>
 
-        {/* Real-Time Weather Widget */}
-        <View style={styles.weatherSection}>
-          <Surface style={styles.weatherCard} elevation={4}>
-            {weatherLoading ? (
-              <View style={styles.weatherLoading}>
-                <ActivityIndicator size="large" color="#4CAF50" />
-                <Text style={styles.weatherLoadingText}>Loading weather...</Text>
-              </View>
-            ) : weather ? (
-              <>
-                <View style={styles.weatherHeader}>
-                  <Text style={styles.weatherEmoji}>{getWeatherEmoji(weather.condition)}</Text>
-                  <View style={styles.weatherMain}>
-                    <Text style={styles.weatherTemp}>{weather.temperature}°C</Text>
-                    <Text style={styles.weatherCondition}>{weather.condition}</Text>
+          {/* White wrapper wrapping features so text is readable */}
+          <View style={styles.featuresSectionWrapper}>
+            {/* Weather Widget */}
+            <View style={styles.weatherSection}>
+              <Surface style={styles.weatherCard} elevation={2}>
+                {weatherLoading ? (
+                  <ActivityIndicator size="small" color="#10B981" />
+                ) : weather ? (
+                <View style={styles.weatherRow}>
+                  <View style={styles.weatherInfo}>
+                    <View style={[styles.weatherIconContainer, { backgroundColor: (getWeatherIcon(weather.condition).color || "#000") + "15" }]}>
+                      {(function() { const info = getWeatherIcon(weather.condition); return <Icon name={info.name} size={32} color={info.color} />; })()}
+                    </View>
+                    <View>
+                      <Text style={styles.weatherTemp}>{weather.temperature}°C {weather.condition}</Text>
+                      <Text style={styles.weatherLocationText}>
+                        <Icon name="map-marker" size={14} color="#6B7280" /> {weather.location}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.weatherStatsRight}>
+                    <View style={styles.weatherStatBadge}>
+                      <Icon name="water-percent" size={18} color="#3B82F6" />
+                      <Text style={styles.weatherSubtext}>{weather.humidity}%</Text>
+                    </View>
+                    <View style={styles.weatherStatBadge}>
+                      <Icon name="weather-windy" size={18} color="#64748B" />
+                      <Text style={styles.weatherSubtext}>{weather.windSpeed} km/h</Text>
+                    </View>
+                    <TouchableOpacity onPress={fetchWeather} style={styles.refreshButton}>
+                      <Icon name="refresh" size={20} color="#10B981" />
+                    </TouchableOpacity>
                   </View>
                 </View>
-                <View style={styles.weatherDetails}>
-                  <View style={styles.weatherDetailItem}>
-                    <Text style={styles.weatherDetailIcon}>💧</Text>
-                    <Text style={styles.weatherDetailLabel}>Humidity</Text>
-                    <Text style={styles.weatherDetailValue}>{weather.humidity}%</Text>
-                  </View>
-                  <View style={styles.weatherDetailItem}>
-                    <Text style={styles.weatherDetailIcon}>💨</Text>
-                    <Text style={styles.weatherDetailLabel}>Wind</Text>
-                    <Text style={styles.weatherDetailValue}>{weather.windSpeed} km/h</Text>
-                  </View>
-                </View>
-                <View style={styles.weatherLocation}>
-                  <Text style={styles.weatherLocationIcon}>📍</Text>
-                  <Text style={styles.weatherLocationText}>{weather.location}</Text>
-                  <TouchableOpacity onPress={fetchWeather} style={styles.weatherRefresh}>
-                    <Text style={styles.weatherRefreshIcon}>🔄</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            ) : (
-              <View style={styles.weatherError}>
-                <Text style={styles.weatherErrorText}>Unable to load weather</Text>
-                <Button mode="outlined" onPress={fetchWeather} icon="refresh">
-                  Retry
-                </Button>
-              </View>
-            )}
-          </Surface>
-        </View>
+              ) : null}
+            </Surface>
+          </View>
 
-        {/* Features Section */}
-        <View style={styles.featuresSection}>
-          <Text style={styles.sectionLabel}>FEATURES</Text>
-          <Title style={styles.sectionTitle}>Everything You Need</Title>
-          <Paragraph style={styles.sectionDescription}>
-            Comprehensive tools to help you make better farming decisions
-          </Paragraph>
+          <Text style={styles.sectionTitle}>Explore Features</Text>
 
           <View style={styles.featureGrid}>
             {features.map((feature, index) => (
-              <TouchableOpacity 
-                key={index} 
+              <TouchableOpacity
+                key={index}
                 activeOpacity={0.8}
-                onPress={() => {
-                  console.log('Navigating to:', feature.screen);
-                  navigation.navigate(feature.screen);
-                }}
+                onPress={() => navigation.navigate(feature.screen)}
                 style={styles.featureCard}
               >
-                <View style={[styles.featureIconBox, { backgroundColor: feature.color }]}>
-                  <Text style={styles.featureIcon}>{feature.icon}</Text>
+                <View style={[styles.featureIconBox, { backgroundColor: feature.color + '15' }]}>
+                  <Icon name={feature.iconName} size={32} color={feature.color} />
                 </View>
                 <Text style={styles.featureTitle}>{feature.title}</Text>
-                <Text style={styles.featureSubtitle}>{feature.subtitle}</Text>
                 <Text style={styles.featureDescription}>{feature.description}</Text>
-                <View style={styles.featureArrow}>
-                  <Text style={{ fontSize: 20, color: feature.color }}>→</Text>
+                <View style={styles.featureActionRow}>
+                  <Text style={[styles.featureActionText, { color: feature.color }]}>Try Now</Text>
+                  <Icon name="arrow-right" size={16} color={feature.color} />
                 </View>
               </TouchableOpacity>
             ))}
           </View>
-        </View>
 
-        {/* Stats Section */}
-        <View style={styles.statsSection}>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>10K+</Text>
-            <Text style={styles.statLabel}>Active Farmers</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>50K+</Text>
-            <Text style={styles.statLabel}>Crops Analyzed</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statNumber}>95%</Text>
-            <Text style={styles.statLabel}>Accuracy Rate</Text>
-          </View>
-        </View>
-
-        {/* CTA Section */}
-        <View style={styles.ctaSection}>
-          <Card style={styles.ctaCard}>
-            <View style={styles.ctaContent}>
-              <Text style={styles.ctaEmoji}>🚀</Text>
-              <Title style={styles.ctaTitle}>Ready to Transform Your Farming?</Title>
-              <Paragraph style={styles.ctaDescription}>
-                Join thousands of farmers already using FarmMate to increase their yields and reduce losses.
-              </Paragraph>
-              <Button 
-                mode="contained" 
-                onPress={() => navigation.navigate(isLoggedIn ? 'PlantAnalyzer' : 'Signup')}
-                style={styles.ctaButton}
-                labelStyle={styles.ctaButtonLabel}
-              >
-                {isLoggedIn ? 'Start Analyzing' : 'Sign Up Free'}
-              </Button>
-            </View>
-          </Card>
-        </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <View style={styles.footerContent}>
-            <View style={styles.footerSection}>
-              <Text style={styles.footerLogo}>🌱 FarmMate</Text>
-              <Text style={styles.footerText}>
-                AI-powered farming assistant for modern agriculture
+          {/* NEW Contact Section & Footer */}
+          <View style={styles.modernContactWrapper}>
+            <View style={styles.contactHeaderWrapper}>
+              <Text style={styles.modernContactTitle}>Contact Us</Text>
+              <Text style={styles.modernContactDesc}>
+                We are committed to processing the information in order to contact you and talk about your project.
               </Text>
+
+              <View style={styles.contactInfoList}>
+                <View style={styles.contactInfoRow}>
+                  <Icon name="email-outline" size={24} color="#E9573F" style={styles.infoIcon} />
+                  <Text style={styles.infoText}>example@teamwebflow.com</Text>
+                </View>
+                <View style={styles.contactInfoRow}>
+                  <Icon name="home-outline" size={24} color="#E9573F" style={styles.infoIcon} />
+                  <Text style={styles.infoText}>4074 Ebert Summit Suite 375{"\n"}Lake Leonardchester</Text>
+                </View>
+                <View style={styles.contactInfoRow}>
+                  <Icon name="cellphone" size={24} color="#E9573F" style={styles.infoIcon} />
+                  <Text style={styles.infoText}>+44 123 654 7890</Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.footerSection}>
-              <Text style={styles.footerHeading}>Quick Links</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('PlantAnalyzer')}>
-                <Text style={styles.footerLink}>Plant Analyzer</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => navigation.navigate('CropRecommendation')}>
-                <Text style={styles.footerLink}>Crop Guide</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => navigation.navigate('Chatbot')}>
-                <Text style={styles.footerLink}>AI Assistant</Text>
+
+            <View style={styles.modernFormWrapper}>
+              <View style={styles.inputContainer}>
+                <TextInput style={styles.modernInput} placeholder="Name*" placeholderTextColor="#aaa" />
+              </View>
+              <View style={styles.inputContainer}>
+                <TextInput style={styles.modernInput} placeholder="Email*" placeholderTextColor="#aaa" keyboardType="email-address" />
+              </View>
+              <View style={styles.inputContainer}>
+                <TextInput style={styles.modernInput} placeholder="Website*" placeholderTextColor="#aaa" />
+              </View>
+              <View style={styles.inputTextAreaContainer}>
+                <TextInput style={styles.modernTextArea} placeholder="Message" placeholderTextColor="#aaa" multiline textAlignVertical="top" />
+              </View>
+
+              <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 10 }}>
+                <LinearGradient
+                  colors={['#42f54b', '#1b2a38']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.gradientSubmitBtn}
+                >
+                  <Text style={styles.gradientSubmitText}>Submit</Text>
+                </LinearGradient>
               </TouchableOpacity>
             </View>
-            <View style={styles.footerSection}>
-              <Text style={styles.footerHeading}>Account</Text>
-              {isLoggedIn ? (
-                <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-                  <Text style={styles.footerLink}>My Profile</Text>
+          </View>
+
+          <View style={styles.modernFooterWrapper}>
+            <View style={styles.footerBrandSection}>
+              <Text style={styles.footerBrand}>Kushal</Text>
+              <Text style={styles.footerDetailsText}>
+                lkushal2006@gmail.com{"\n"}+91 8660179391
+              </Text>
+              <View style={styles.socialRow}>
+                <TouchableOpacity style={styles.socialIcon} activeOpacity={0.8}>
+                  <Icon name="instagram" size={18} color="#af42f5" />
                 </TouchableOpacity>
-              ) : (
-                <>
-                  <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                    <Text style={styles.footerLink}>Login</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-                    <Text style={styles.footerLink}>Sign Up</Text>
-                  </TouchableOpacity>
-                </>
-              )}
+                <TouchableOpacity style={styles.socialIcon} activeOpacity={0.8} onPress={() => Linking.openURL("https://www.linkedin.com/in/kushal-l-a39246326/")}>
+                  <Icon name="linkedin" size={18} color="#af42f5" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.socialIcon} activeOpacity={0.8} onPress={() => Linking.openURL("https://x.com/D8932857095570")}>
+                  <Icon name="twitter" size={18} color="#af42f5" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.socialIcon} activeOpacity={0.8}>
+                  <Icon name="facebook" size={18} color="#af42f5" />
+                </TouchableOpacity>
+              </View>
+                <View style={styles.socialIcon}><Icon name="linkedin" size={18} color="#af42f5" /></View>
+                <View style={styles.socialIcon}><Icon name="twitter" size={18} color="#af42f5" /></View>
+                <View style={styles.socialIcon}><Icon name="facebook" size={18} color="#af42f5" /></View>
+              </View>
             </View>
-          </View>
-          <View style={styles.footerBottom}>
-            <Text style={styles.copyright}>© 2025 FarmMate. All rights reserved.</Text>
-          </View>
-        </View>
-      </ScrollView>
-      </ImageBackground>
-    </View>
-  );
+            
+            <View style={styles.footerLinksGrid}>
+  <View style={styles.footerCol}>
+    <Text style={styles.footerColTitle}>Blog</Text>
+    <Text style={styles.footerLink}>Company</Text>
+  </View>
+</View>
+</View>
+</ScrollView>
+</View>
+);
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#ffffff'
-  },
-  
-  // Background Image Styles
-  backgroundImage: {
+  fixedBg: { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%", zIndex: -1 },
+  container: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    backgroundColor: '#1a1a1a'
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)', // White overlay for better readability
-    zIndex: 1,
+  scrollView: {
+    flex: 1,
   },
-  
-  // Modern Floating Navbar - Black with rounded design
-  navbar: {
-    position: 'absolute',
-    top: 10,
-    left: 16,
-    right: 16,
-    zIndex: 1001, // Above overlay
-    backgroundColor: '#1E293B',
-    borderRadius: 50,
-    elevation: 12,
+  heroSection: {
+    alignItems: 'center',
+    paddingTop: 140,
+    paddingHorizontal: 20,
+    paddingBottom: 220,
+    backgroundColor: 'transparent',
+  },
+  badgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
-  navContent: {
+  badgeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
+    marginRight: 8,
+  },
+  badgeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  mainTitle: {
+    fontSize: 48,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+    textAlign: 'center',
+    lineHeight: 56,
+    letterSpacing: -1,
+    marginBottom: 32,
+    paddingHorizontal: 20,
+  },
+  heroButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#10B981',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 30,
+    elevation: 4,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  heroButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  quoteContainer: {
+    marginTop: 48,
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  quoteText: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 18,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 12,
+    lineHeight: 28,
+    fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  quoteAuthor: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 15,
+    fontWeight: '600',
+    marginTop: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
+  featuresSectionWrapper: {
+    padding: 40,
+    backgroundColor: 'rgba(255,255,255,1)',
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    flex: 1,
+    minHeight: 800,
+  },
+  weatherSection: {
+    marginBottom: 48,
+    alignItems: 'center',
+  },
+  weatherCard: {
+    paddingVertical: 24,
+    paddingHorizontal: 32,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    maxWidth: 720,
+    width: '100%',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  weatherRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 28,
-    paddingVertical: 16,
-  },
-  navLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logo: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-    letterSpacing: 0.5,
-  },
-  navRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  welcomeText: {
-    fontSize: 14,
-    color: '#94A3B8',
-    marginRight: 8,
-    fontWeight: '500',
-  },
-  loginButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 25,
-    paddingHorizontal: 4,
-  },
-  logoutButton: {
-    backgroundColor: '#EF4444',
-    borderRadius: 25,
-    paddingHorizontal: 4,
-  },
-  buttonLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  
-  scrollView: {
-    flex: 1,
-    zIndex: 2, // Above overlay
-  },
-  
-  // Hero Section
-  hero: {
-    paddingHorizontal: 24,
-    paddingTop: 100,
-    paddingBottom: 80,
-    backgroundColor: '#F8FAF9',
-  },
-  heroContent: {
-    marginBottom: 40,
-  },
-  heroSubtitle: {
-    fontSize: 14,
-    color: '#4CAF50',
-    fontWeight: '700',
-    letterSpacing: 2,
-    marginBottom: 8,
-    textTransform: 'uppercase',
-  },
-  heroTitle: {
-    fontSize: 42,
-    fontWeight: 'bold',
-    color: '#0F172A',
-    marginBottom: 20,
-    lineHeight: 52,
-    letterSpacing: -0.5,
-  },
-  heroDescription: {
-    fontSize: 18,
-    color: '#1E293B',
-    lineHeight: 28,
-    marginBottom: 40,
-    maxWidth: 600,
-    fontWeight: '500',
-  },
-  heroButtons: {
-    flexDirection: 'row',
-    gap: 16,
     flexWrap: 'wrap',
+    gap: 16,
   },
-  primaryButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 24,
-  },
-  primaryButtonLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  secondaryButton: {
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 24,
-    borderColor: '#4CAF50',
-    borderWidth: 2,
-    backgroundColor: '#FFFFFF',
-  },
-  secondaryButtonLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4CAF50',
-  },
-  heroImage: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroEmoji: {
-    fontSize: 120,
-  },
-  
-  // Weather Widget Styles
-  weatherSection: {
-    paddingHorizontal: 24,
-    paddingVertical: 30,
-    backgroundColor: '#ffffff',
-  },
-  weatherCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 2,
-    borderColor: '#E8F5E9',
-  },
-  weatherLoading: {
-    alignItems: 'center',
-    paddingVertical: 30,
-  },
-  weatherLoadingText: {
-    marginTop: 12,
-    color: '#64748B',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  weatherHeader: {
+  weatherInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
   },
-  weatherEmoji: {
-    fontSize: 64,
-    marginRight: 20,
-  },
-  weatherMain: {
-    flex: 1,
+  weatherIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
   weatherTemp: {
-    fontSize: 48,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '800',
     color: '#0F172A',
-    lineHeight: 52,
-  },
-  weatherCondition: {
-    fontSize: 18,
-    color: '#64748B',
-    fontWeight: '500',
-  },
-  weatherDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 20,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: '#E8F5E9',
-    marginBottom: 16,
-  },
-  weatherDetailItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  weatherDetailIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  weatherDetailLabel: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginBottom: 4,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  weatherDetailValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1E293B',
-  },
-  weatherLocation: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  weatherLocationIcon: {
-    fontSize: 16,
-    marginRight: 6,
+    letterSpacing: -0.5,
   },
   weatherLocationText: {
     fontSize: 14,
     color: '#64748B',
+    marginTop: 4,
     fontWeight: '500',
   },
-  weatherRefresh: {
-    marginLeft: 12,
-    padding: 4,
-  },
-  weatherRefreshIcon: {
-    fontSize: 20,
-  },
-  weatherError: {
+  weatherStatsRight: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 20,
+    gap: 12,
   },
-  weatherErrorText: {
-    fontSize: 14,
-    color: '#EF4444',
-    marginBottom: 12,
-    fontWeight: '500',
+  weatherStatBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 14,
+    gap: 6,
   },
-  
-  // Features Section
-  featuresSection: {
-    paddingHorizontal: 24,
-    paddingVertical: 80,
-    backgroundColor: '#ffffff',
+  weatherSubtext: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#334155',
   },
-  sectionLabel: {
-    fontSize: 13,
-    color: '#4CAF50',
-    fontWeight: '800',
-    letterSpacing: 2,
-    marginBottom: 8,
-    textTransform: 'uppercase',
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#10B98115',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 14,
+    marginLeft: 8,
   },
   sectionTitle: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: '#0F172A',
-    marginBottom: 12,
-  },
-  sectionDescription: {
-    fontSize: 17,
-    color: '#1E293B',
-    marginBottom: 40,
-    lineHeight: 26,
-    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 48,
+    letterSpacing: -0.5,
   },
   featureGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: 32,
   },
   featureCard: {
-    width: '48%',
-    backgroundColor: '#ffffff',
-    borderRadius: 24,
-    padding: 28,
-    marginBottom: 24,
-    borderWidth: 2,
-    borderColor: '#E2E8F0',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-  },
-  featureIconBox: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  featureIcon: {
-    fontSize: 32,
-  },
-  featureTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#0F172A',
-    marginBottom: 6,
-  },
-  featureSubtitle: {
-    fontSize: 14,
-    color: '#1E293B',
-    marginBottom: 12,
-    fontWeight: '600',
-  },
-  featureDescription: {
-    fontSize: 13,
-    color: '#334155',
-    lineHeight: 20,
-    marginBottom: 12,
-    fontWeight: '500',
-  },
-  featureArrow: {
-    alignSelf: 'flex-start',
-    marginTop: 8,
-  },
-  
-  // Stats Section
-  statsSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 24,
-    paddingVertical: 80,
-    backgroundColor: '#4CAF50',
-  },
-  statBox: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 40,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 8,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.9)',
-  },
-  
-  // CTA Section
-  ctaSection: {
-    paddingHorizontal: 24,
-    paddingVertical: 80,
-    backgroundColor: '#ffffff',
-  },
-  ctaCard: {
-    borderRadius: 24,
-    overflow: 'hidden',
+    width: width > 768 ? 340 : '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 32,
+    padding: 32,
+    borderWidth: 1,
+    borderColor: '#F8FAFC',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.08,
+    shadowRadius: 32,
     elevation: 4,
   },
-  ctaContent: {
-    padding: 50,
+  featureIconBox: {
+    width: 68,
+    height: 68,
+    borderRadius: 22,
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F8FAF9',
-  },
-  ctaEmoji: {
-    fontSize: 64,
     marginBottom: 24,
   },
-  ctaTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
+  featureTitle: {
+    fontSize: 22,
+    fontWeight: '800',
     color: '#0F172A',
-    marginBottom: 16,
-    textAlign: 'center',
+    marginBottom: 12,
+    letterSpacing: -0.5,
   },
-  ctaDescription: {
-    fontSize: 17,
-    color: '#1E293B',
-    textAlign: 'center',
-    marginBottom: 32,
+  featureDescription: {
+    fontSize: 16,
     lineHeight: 26,
-    fontWeight: '600',
-  },
-  ctaButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 12,
-    paddingHorizontal: 32,
-    paddingVertical: 8,
-  },
-  ctaButtonLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  
-  // Footer
-  footer: {
-    backgroundColor: '#1E293B',
-    paddingTop: 80,
-    paddingBottom: 50,
-  },
-  footerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 24,
-    marginBottom: 50,
-  },
-  footerSection: {
+    color: '#64748B',
     flex: 1,
-    marginHorizontal: 10,
+    marginBottom: 24,
   },
-  footerLogo: {
+  featureActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 'auto',
+  },
+  featureActionText: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginRight: 6,
+  },
+  aboutSection: {
+    marginTop: 64,
+  },
+  aboutCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 32,
+    padding: 40,
+    flexDirection: width > 768 ? 'row' : 'column',
+    alignItems: 'center',
+    gap: 32,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  aboutIconBox: {
+    width: 90,
+    height: 90,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: width > 768 ? 0 : 16,
+  },
+  aboutContent: {
+    flex: 1,
+  },
+  aboutText: {
+    fontSize: 17,
+    lineHeight: 28,
+    color: '#475569',
+    textAlign: width > 768 ? 'left' : 'center',
+  },
+  contactSection: {
+    marginTop: 64,
+    marginBottom: 40,
+  },
+  contactCard: {
+    width: width > 768 ? 260 : '100%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 32,
+    padding: 32,
+    borderWidth: 1,
+    borderColor: '#F8FAFC',
+    shadowColor: '#64748B',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.05,
+    shadowRadius: 24,
+    elevation: 3,
+    alignItems: 'center',
+  },
+  contactTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-    marginBottom: 12,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 8,
+    textAlign: 'center',
+    letterSpacing: -0.5,
   },
-  footerText: {
-    fontSize: 14,
-    color: '#94A3B8',
-    lineHeight: 22,
-  },
-  footerHeading: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 16,
-  },
-  footerLink: {
-    fontSize: 14,
-    color: '#94A3B8',
-    marginBottom: 12,
-    lineHeight: 20,
-  },
-  footerBottom: {
-    paddingHorizontal: 20,
-    paddingTop: 30,
-    borderTopWidth: 1,
-    borderTopColor: '#334155',
-  },
-  copyright: {
-    fontSize: 12,
+  contactDescription: {
+    fontSize: 15,
     color: '#64748B',
     textAlign: 'center',
   },
+  modernContactWrapper: {
+    marginTop: 40,
+    backgroundColor: '#FAF9F6',
+    borderRadius: 32,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.05,
+    shadowRadius: 20,
+    elevation: 3,
+  },
+  contactHeaderWrapper: {
+    marginBottom: 30,
+  },
+  modernContactTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#333',
+    marginBottom: 10,
+  },
+  modernContactDesc: {
+    fontSize: 15,
+    color: '#666',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  contactInfoList: {
+    marginTop: 10,
+  },
+  contactInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  infoIcon: {
+    marginRight: 16,
+  },
+  infoText: {
+    fontSize: 15,
+    color: '#444',
+  },
+  modernFormWrapper: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.03,
+    shadowRadius: 15,
+    elevation: 2,
+  },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  modernInput: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#eee',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: '#333',
+  },
+  inputTextAreaContainer: {
+    marginBottom: 16,
+  },
+  modernTextArea: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#eee',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 14,
+    fontSize: 15,
+    color: '#333',
+    height: 100,
+  },
+  gradientSubmitBtn: {
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gradientSubmitText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modernFooterWrapper: {
+    marginTop: 40,
+    backgroundColor: '#FAF9F6',
+    paddingTop: 30,
+    paddingBottom: 40,
+    borderRadius: 32,
+    paddingHorizontal: 20,
+  },
+  footerBrandSection: {
+    marginBottom: 30,
+  },
+  footerBrand: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#333',
+    marginBottom: 10,
+  },
+  footerDetailsText: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 22,
+  },
+  socialRow: {
+    flexDirection: 'row',
+    marginTop: 15,
+  },
+  socialIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#f6ebff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  footerLinksGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+  },
+  footerCol: {
+    width: '30%',
+    marginBottom: 20,
+  },
+  footerColTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 12,
+  },
+  footerLink: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 10,
+  }
 });
+

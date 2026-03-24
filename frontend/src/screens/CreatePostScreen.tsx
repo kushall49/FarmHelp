@@ -32,7 +32,7 @@ export default function CreatePostScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [16, 9],
+        aspect: [4, 3], // Match the display ratio precisely
         quality: 0.8,
       });
 

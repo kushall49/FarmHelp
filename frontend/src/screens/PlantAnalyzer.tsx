@@ -158,7 +158,7 @@ export default function PlantAnalyzer(): JSX.Element {
           uri: image.uri,
           name: filename,
           type: mimeType  // Always valid MIME type
-        });
+        } as any);
         
         console.log('[ANALYZER] ✅ Mobile: URI object appended with MIME:', mimeType);
       }

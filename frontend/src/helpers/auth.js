@@ -41,7 +41,7 @@ export async function clearJwt() {
 // Helper to create test token from backend
 export async function createTestToken() {
   try {
-    const API_BASE_URL = process.env.API_URL || 'http://localhost:5000';
+    const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.253.160.3:4000';
     const response = await fetch(`${API_BASE_URL}/api/auth/test-token`, {
       method: 'POST',
       headers: {

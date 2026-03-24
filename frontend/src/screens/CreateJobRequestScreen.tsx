@@ -152,7 +152,8 @@ export default function CreateJobRequestScreen({ navigation }: any) {
         <View style={{ width: 40 }} />
       </Surface>
 
-      <View style={styles.content}>
+      <View style={styles.contentWrapper}>
+        <View style={styles.content}>
         <Text style={styles.label}>Service Needed *</Text>
         <Menu
           visible={serviceMenuVisible}
@@ -180,10 +181,10 @@ export default function CreateJobRequestScreen({ navigation }: any) {
         </Menu>
 
         <Text style={styles.label}>Title *</Text>
-        <TextInput mode="outlined" value={title} onChangeText={setTitle} style={styles.input} />
+        <TextInput activeOutlineColor="#1a7a4a" outlineColor="#ddeee4" textColor="#1a2e1e" mode="outlined" value={title} onChangeText={setTitle} style={styles.input} />
 
         <Text style={styles.label}>Description *</Text>
-        <TextInput mode="outlined" value={description} onChangeText={setDescription} multiline numberOfLines={4} style={styles.input} />
+        <TextInput activeOutlineColor="#1a7a4a" outlineColor="#ddeee4" textColor="#1a2e1e" mode="outlined" value={description} onChangeText={setDescription} multiline numberOfLines={4} style={styles.input} />
 
         <Text style={styles.label}>District *</Text>
         <Menu
@@ -214,29 +215,90 @@ export default function CreateJobRequestScreen({ navigation }: any) {
         </Menu>
 
         <Text style={styles.label}>Taluk *</Text>
-        <TextInput mode="outlined" value={taluk} onChangeText={setTaluk} style={styles.input} />
+        <TextInput activeOutlineColor="#1a7a4a" outlineColor="#ddeee4" textColor="#1a2e1e" mode="outlined" value={taluk} onChangeText={setTaluk} style={styles.input} />
 
         <Text style={styles.label}>Phone Number *</Text>
-        <TextInput mode="outlined" value={phoneNumber} onChangeText={setPhoneNumber} keyboardType="phone-pad" style={styles.input} />
+        <TextInput activeOutlineColor="#1a7a4a" outlineColor="#ddeee4" textColor="#1a2e1e" mode="outlined" value={phoneNumber} onChangeText={setPhoneNumber} keyboardType="phone-pad" style={styles.input} />
 
         <Text style={styles.label}>Date Needed * (YYYY-MM-DD)</Text>
-        <TextInput mode="outlined" value={dateNeeded} onChangeText={setDateNeeded} placeholder="2025-10-25" style={styles.input} />
+        <TextInput activeOutlineColor="#1a7a4a" outlineColor="#ddeee4" textColor="#1a2e1e" mode="outlined" value={dateNeeded} onChangeText={setDateNeeded} placeholder="2025-10-25" style={styles.input} />
 
         <Button mode="contained" onPress={handleSubmit} loading={loading} style={styles.submitButton}>
           {loading ? 'Posting...' : 'Post Job Request'}
         </Button>
-      </View>
-    </ScrollView>
+          </View>
+        </View>
+      </ScrollView>
   );
 }
 
+
+const colors = {
+  primary: '#1a7a4a',
+  primaryLight: '#e8f5ee',
+  accent: '#f5a623',
+  surface: '#ffffff',
+  bg: '#f6f9f7',
+  textMain: '#1a2e1e',
+  textMuted: '#6b8070',
+  border: '#ddeee4'
+};
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F5F5' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 8, backgroundColor: '#fff', elevation: 2 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#262626' },
-  content: { padding: 16 },
-  label: { fontSize: 14, fontWeight: '600', color: '#666', marginTop: 12, marginBottom: 8 },
-  input: { backgroundColor: '#fff', marginBottom: 12 },
-  chip: { alignSelf: 'flex-start', marginBottom: 12 },
-  submitButton: { backgroundColor: '#2196F3', paddingVertical: 8, marginTop: 24 },
+  container: { flex: 1, backgroundColor: colors.bg },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: colors.textMain },
+  contentWrapper: {
+    width: '100%',
+    maxWidth: 800,
+    alignSelf: 'center',
+    padding: 24,
+  },
+  content: {
+    backgroundColor: colors.surface,
+    padding: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  label: { fontSize: 14, fontWeight: '600', color: colors.textMain, marginTop: 16, marginBottom: 8 },
+  input: { backgroundColor: colors.bg, fontSize: 15 },
+  chip: { alignSelf: 'flex-start', marginBottom: 16, backgroundColor: colors.primaryLight },
+  submitButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 10,
+    borderRadius: 24,
+    marginTop: 32,
+    marginBottom: 40,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  submitButtonLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.surface,
+    letterSpacing: 0.5,
+  }
 });

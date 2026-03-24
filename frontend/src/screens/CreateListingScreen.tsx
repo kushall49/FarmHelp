@@ -247,7 +247,8 @@ export default function CreateListingScreen({ navigation }: any) {
         <View style={{ width: 40 }} />
       </Surface>
 
-      <View style={styles.content}>
+      <View style={styles.contentWrapper}>
+        <View style={styles.content}>
         {/* Image Picker */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Service Photos (Optional)</Text>
@@ -310,7 +311,7 @@ export default function CreateListingScreen({ navigation }: any) {
         {/* Title */}
         <View style={styles.section}>
           <Text style={styles.label}>Title *</Text>
-          <TextInput
+          <TextInput activeOutlineColor="#1a7a4a" outlineColor="#ddeee4" textColor="#1a2e1e"
             mode="outlined"
             placeholder="e.g., Tractor for rent - 50HP"
             value={title}
@@ -323,7 +324,7 @@ export default function CreateListingScreen({ navigation }: any) {
         {/* Description */}
         <View style={styles.section}>
           <Text style={styles.label}>Description *</Text>
-          <TextInput
+          <TextInput activeOutlineColor="#1a7a4a" outlineColor="#ddeee4" textColor="#1a2e1e"
             mode="outlined"
             placeholder="Describe your service, equipment condition, experience..."
             value={description}
@@ -372,7 +373,7 @@ export default function CreateListingScreen({ navigation }: any) {
 
           {/* Taluk */}
           <Text style={styles.label}>Taluk *</Text>
-          <TextInput
+          <TextInput activeOutlineColor="#1a7a4a" outlineColor="#ddeee4" textColor="#1a2e1e"
             mode="outlined"
             placeholder="e.g., Hunsur"
             value={taluk}
@@ -382,7 +383,7 @@ export default function CreateListingScreen({ navigation }: any) {
 
           {/* Village */}
           <Text style={styles.label}>Village (Optional)</Text>
-          <TextInput
+          <TextInput activeOutlineColor="#1a7a4a" outlineColor="#ddeee4" textColor="#1a2e1e"
             mode="outlined"
             placeholder="e.g., Bilikere"
             value={village}
@@ -394,7 +395,7 @@ export default function CreateListingScreen({ navigation }: any) {
         {/* Contact */}
         <View style={styles.section}>
           <Text style={styles.label}>Contact Number *</Text>
-          <TextInput
+          <TextInput activeOutlineColor="#1a7a4a" outlineColor="#ddeee4" textColor="#1a2e1e"
             mode="outlined"
             placeholder="10-digit mobile number"
             value={phoneNumber}
@@ -411,7 +412,7 @@ export default function CreateListingScreen({ navigation }: any) {
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <Text style={styles.label}>Rate (₹) *</Text>
-              <TextInput
+              <TextInput activeOutlineColor="#1a7a4a" outlineColor="#ddeee4" textColor="#1a2e1e"
                 mode="outlined"
                 placeholder="Amount"
                 value={rateAmount}
@@ -462,117 +463,176 @@ export default function CreateListingScreen({ navigation }: any) {
         >
           {loading ? 'Creating...' : 'Create Listing'}
         </Button>
-      </View>
-    </ScrollView>
+          </View>
+        </View>
+      </ScrollView>
   );
 }
+
+
+const colors = {
+  primary: '#1a7a4a',
+  primaryLight: '#e8f5ee',
+  accent: '#f5a623',
+  surface: '#ffffff',
+  bg: '#f6f9f7',
+  textMain: '#1a2e1e',
+  textMuted: '#6b8070',
+  border: '#ddeee4'
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.bg,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
-    elevation: 2,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#262626',
+    color: colors.textMain,
+  },
+  contentWrapper: {
+    width: '100%',
+    maxWidth: 800,
+    alignSelf: 'center',
+    padding: 24,
   },
   content: {
-    padding: 16,
+    backgroundColor: colors.surface,
+    padding: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#262626',
-    marginBottom: 12,
+    color: colors.textMain,
+    marginBottom: 20,
+    paddingBottom: 8,
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
+    color: colors.textMain,
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.bg,
+    fontSize: 15,
   },
   dropdown: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: '#fff',
+    backgroundColor: colors.bg,
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    marginBottom: 12,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    marginBottom: 8,
   },
   dropdownText: {
-    fontSize: 14,
-    color: '#262626',
+    fontSize: 15,
+    color: colors.textMain,
   },
   placeholder: {
-    color: '#999',
+    color: colors.textMuted,
   },
   row: {
     flexDirection: 'row',
   },
   imagesContainer: {
     flexDirection: 'row',
+    paddingVertical: 8,
   },
   imageWrapper: {
     position: 'relative',
-    marginRight: 12,
+    marginRight: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   previewImage: {
     width: 120,
     height: 120,
-    borderRadius: 8,
-    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    backgroundColor: colors.bg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   removeButton: {
     position: 'absolute',
-    top: -8,
-    right: -8,
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    top: -10,
+    right: -10,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 2,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   addImageButton: {
     width: 120,
     height: 120,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#ddd',
+    borderColor: colors.primary,
     borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.primaryLight,
   },
   addImageText: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.primary,
     marginTop: 8,
   },
   submitButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 8,
+    backgroundColor: colors.primary,
+    paddingVertical: 10,
+    borderRadius: 24,
     marginTop: 16,
-    marginBottom: 32,
+    marginBottom: 40,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   submitButtonLabel: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: colors.surface,
+    letterSpacing: 0.5,
   },
 });

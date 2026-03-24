@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 // Use localhost for web, local IP for mobile devices
 const API_BASE_URL = Platform.OS === 'web' 
   ? (process.env.API_URL || 'http://localhost:4000')
-  : (process.env.API_URL || 'http://172.21.146.174:4000');
+  : (process.env.EXPO_PUBLIC_API_URL || 'http://10.253.160.3:4000');
 
 export async function uploadImage(formData, token) {
   try {
