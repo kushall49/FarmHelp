@@ -54,7 +54,7 @@ export default function PlantAnalyzer(): JSX.Element {
   async function pickImage(): Promise<void> {
     const res = await ImagePicker.launchImageLibraryAsync({ 
       mediaTypes: ImagePicker.MediaTypeOptions.Images, 
-      quality: 0.8,
+      quality: 1.0, // Full quality - no compression
       allowsEditing: true,
       aspect: [4, 3]
     });
@@ -73,7 +73,7 @@ export default function PlantAnalyzer(): JSX.Element {
       return;
     }
     const res = await ImagePicker.launchCameraAsync({ 
-      quality: 0.8,
+      quality: 1.0, // Full quality - no compression
       allowsEditing: true,
       aspect: [4, 3]
     });

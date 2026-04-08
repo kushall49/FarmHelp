@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-nati
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
+import { useLanguage } from '../context/LanguageContext';
 
 const { width } = Dimensions.get('window');
 
@@ -12,6 +13,7 @@ interface TopNavigationProps {
 
 export default function TopNavigation({ activeTab = 'Home' }: TopNavigationProps) {
   const navigation = useNavigation<any>();
+  const { t } = useLanguage();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('Guest');
 
@@ -52,28 +54,28 @@ export default function TopNavigation({ activeTab = 'Home' }: TopNavigationProps
             onPress={() => navigation.navigate('HomeTab')}
           >
             <Icon name="home" size={24} color={activeTab === 'Home' ? "#10B981" : "#6B7280"} style={styles.navIcon} />
-            <Text style={[styles.navItem, activeTab === 'Home' && styles.navTextActive]}>Home</Text>
+            <Text style={[styles.navItem, activeTab === 'Home' && styles.navTextActive]}>{t('home')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.navItemContainer, activeTab === 'Community' && styles.navItemContainerActive]}
             onPress={() => navigation.navigate('CommunityTab')}
           >
             <Icon name="account-group-outline" size={24} color={activeTab === 'Community' ? "#10B981" : "#6B7280"} style={styles.navIcon} />
-            <Text style={[styles.navItem, activeTab === 'Community' && styles.navTextActive]}>Community</Text>
+            <Text style={[styles.navItem, activeTab === 'Community' && styles.navTextActive]}>{t('community')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.navItemContainer, activeTab === 'Services' && styles.navItemContainerActive]}
             onPress={() => navigation.navigate('ServicesTab')}
           >
             <Icon name="briefcase-outline" size={24} color={activeTab === 'Services' ? "#10B981" : "#6B7280"} style={styles.navIcon} />
-            <Text style={[styles.navItem, activeTab === 'Services' && styles.navTextActive]}>Services</Text>
+            <Text style={[styles.navItem, activeTab === 'Services' && styles.navTextActive]}>{t('services')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.navItemContainer, activeTab === 'Profile' && styles.navItemContainerActive]}
             onPress={() => navigation.navigate('ProfileTab')}
           >
             <Icon name="account-outline" size={24} color={activeTab === 'Profile' ? "#10B981" : "#6B7280"} style={styles.navIcon} />
-            <Text style={[styles.navItem, activeTab === 'Profile' && styles.navTextActive]}>Profile</Text>
+            <Text style={[styles.navItem, activeTab === 'Profile' && styles.navTextActive]}>{t('profile')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -83,16 +85,16 @@ export default function TopNavigation({ activeTab = 'Home' }: TopNavigationProps
           <>
             <Text style={styles.navLinkText}>Hi, {username}</Text>
             <TouchableOpacity onPress={handleLogout} style={styles.navButtonOutline}>
-              <Text style={styles.navButtonOutlineText}>Logout</Text>
+              <Text style={styles.navButtonOutlineText}>{t('logout')}</Text>
             </TouchableOpacity>
           </>
         ) : (
           <>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.navLinkText}>Sign In</Text>
+              <Text style={styles.navLinkText}>{t('login')}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => navigation.navigate('Signup')} style={styles.navButtonOutline}>
-              <Text style={styles.navButtonOutlineText}>Sign up Free</Text>
+              <Text style={styles.navButtonOutlineText}>{t('register')}</Text>
             </TouchableOpacity>
           </>
         )}

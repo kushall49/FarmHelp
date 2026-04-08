@@ -2,9 +2,26 @@ const express = require('express');
 const multer = require('multer');
 const PlantAnalysis = require('../models/PlantAnalysis');
 const AIService = require('../services/ai');
+const { analyzeWithCureSuggestions } = require('../services/plantDiseaseAnalyzer');
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+/**
+ * Map ML Service severity to MongoDB schema severity
+ * ML Service uses: 'low', 'medium', 'high', 'critical'
+ * MongoDB schema uses: 'mild', 'moderate', 'severe', 'healthy'
+ */
+function mapSeverity(mlSeverity) {
+  const severityMap = {
+    'low': 'mild',
+    'medium': 'moderate',
+    'high': 'severe',
+    'critical': 'severe',
+    'healthy': 'healthy'
+  };
+  return severityMap[mlSeverity] || 'moderate';
+}
 
 // Upload plant image and analyze
 router.post('/upload-plant', upload.single('image'), async (req, res) => {
@@ -83,6 +100,11 @@ router.post('/upload-plant', upload.single('image'), async (req, res) => {
     console.log('[PLANT-UPLOAD] ✅ AI service responded in', processingTime, 'ms');
     console.log('[PLANT-UPLOAD] AI service response:', JSON.stringify(result, null, 2));
 
+    // ✨ NEW: Enhance with cure suggestions
+    console.log('[PLANT-UPLOAD] Enhancing with cure suggestions...');
+    const enhancedResult = await analyzeWithCureSuggestions(result);
+    console.log('[PLANT-UPLOAD] ✅ Cure suggestions added');
+
     // PRODUCTION: Validate AI service response
     if (!result || typeof result !== 'object') {
       console.error('[PLANT-UPLOAD] ❌ Invalid AI service response:', result);
@@ -137,25 +159,30 @@ router.post('/upload-plant', upload.single('image'), async (req, res) => {
         mimeType: req.file.mimetype
       },
       prediction: {
-        crop: result.crop || 'Unknown',
+        crop: enhancedResult.crop || 'Unknown',
         disease: {
-          name: result.disease || 'Unknown',
-          severity: 'moderate' // Could be derived from confidence
+          name: enhancedResult.disease || 'Unknown',
+          severity: mapSeverity(enhancedResult.severity) || 'moderate',
+          scientificName: enhancedResult.scientificName
         },
-        confidence: result.confidence || 0,
-        confidencePercentage: parseFloat(result.confidence_percentage) || 0,
-        topPredictions: (result.predictions || []).map((pred, idx) => ({
+        confidence: enhancedResult.confidence || 0,
+        confidencePercentage: parseFloat(enhancedResult.confidence_percentage) || 0,
+        topPredictions: (enhancedResult.predictions || []).map((pred, idx) => ({
           disease: pred.class_name || pred.class || 'Unknown',
           confidence: pred.confidence || 0,
           rank: idx + 1
         }))
       },
       recommendations: {
-        summary: result.recommendation || 'No recommendations available',
+        summary: enhancedResult.recommendation || 'No recommendations available',
+        symptoms: enhancedResult.symptoms || [],
+        affectedCrops: enhancedResult.affectedCrops || [],
+        recoveryTime: enhancedResult.recoveryTime,
         treatments: {
-          chemical: [],
-          organic: [],
-          preventive: []
+          immediate: enhancedResult.cure?.immediate || [],
+          organic: enhancedResult.cure?.organic || [],
+          chemical: enhancedResult.cure?.chemical || [],
+          preventive: enhancedResult.cure?.prevention || []
         }
       },
       fertilizers: {
@@ -188,21 +215,29 @@ router.post('/upload-plant', upload.single('image'), async (req, res) => {
     
     console.log('[PLANT-UPLOAD] ✅ Analysis saved to database:', record._id);
 
-    // Return simplified response
+    // Return enhanced response with cure suggestions
     res.json({ 
       success: true,
       id: record._id, 
       result: {
-        crop: result.crop,
-        disease: result.disease,
-        confidence: result.confidence,
-        confidence_percentage: result.confidence_percentage,
-        predictions: result.predictions,
-        recommendation: result.recommendation,
-        recommendations: result.recommendations,
-        fertilizers: result.fertilizers,
-        gradcam: result.gradcam,
-        processing_time_ms: result.processing_time_ms
+        crop: enhancedResult.crop,
+        disease: enhancedResult.disease,
+        scientificName: enhancedResult.scientificName,
+        confidence: enhancedResult.confidence,
+        confidence_percentage: enhancedResult.confidence_percentage,
+        severity: mapSeverity(enhancedResult.severity), // Map to MongoDB enum
+        severityRaw: enhancedResult.severity, // Keep original for reference
+        predictions: enhancedResult.predictions,
+        recommendation: enhancedResult.recommendation,
+        recommendations: enhancedResult.recommendations,
+        symptoms: enhancedResult.symptoms,
+        affectedCrops: enhancedResult.affectedCrops,
+        recoveryTime: enhancedResult.recoveryTime,
+        cure: enhancedResult.cure,
+        fertilizers: enhancedResult.fertilizers,
+        gradcam: enhancedResult.gradcam,
+        processing_time_ms: enhancedResult.processing_time_ms,
+        timestamp: enhancedResult.timestamp
       }
     });
   } catch (err) {

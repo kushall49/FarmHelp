@@ -27,6 +27,7 @@ import ServiceCard from '../components/ServiceCard';
 import JobCard from '../components/JobCard';
 import TopNavigation from '../components/TopNavigation';
 import { useSafeGoBack } from '../navigation/AppNavigator';
+import { useTheme } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 

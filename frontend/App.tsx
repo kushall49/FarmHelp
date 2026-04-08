@@ -16,6 +16,8 @@ import { Provider as PaperProvider } from 'react-native-paper';
 // Import new navigation architecture
 import AppNavigator, { useAndroidBackHandler } from './src/navigation/AppNavigator';
 import type { RootStackParamList } from './src/navigation/navigationTypes';
+import { ThemeProvider } from './src/context/ThemeContext';
+import { LanguageProvider } from './src/context/LanguageContext';
 
 export default function App() {
   // Reference to navigation for Android back button handler
@@ -25,10 +27,14 @@ export default function App() {
   useAndroidBackHandler(navigationRef);
 
   return (
-    <PaperProvider>
-      <NavigationContainer ref={navigationRef}>
-        <AppNavigator />
-      </NavigationContainer>
-    </PaperProvider>
+    <LanguageProvider>
+      <ThemeProvider>
+        <PaperProvider>
+          <NavigationContainer ref={navigationRef}>
+            <AppNavigator />
+          </NavigationContainer>
+        </PaperProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   );
 }

@@ -11,6 +11,7 @@ interface PostCardProps {
   onProfilePress: (userId: string) => void;
   onUpvote: () => void;
   onDownvote: () => void;
+  isDarkMode?: boolean;
 }
 
 export default function PostCard({
@@ -18,8 +19,17 @@ export default function PostCard({
   onPress,
   onProfilePress,
   onUpvote,
-  onDownvote
+  onDownvote,
+  isDarkMode = false
 }: PostCardProps) {
+
+  const colors = {
+    cardBg: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+    text: isDarkMode ? '#FFFFFF' : '#1A1A1B',
+    textSecondary: isDarkMode ? '#A0A0A0' : '#787C7E',
+    border: isDarkMode ? '#333333' : '#EDEFF1',
+    actionBg: isDarkMode ? '#2D2D2D' : '#F6F7F8',
+  };
 
   const getAvatarUrl = (username: string) => {
     return `https://api.dicebear.com/7.x/faces/svg?seed=${username}&backgroundColor=b6e3f4`;
@@ -34,7 +44,7 @@ export default function PostCard({
   };
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.cardBg, borderColor: colors.border }]}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -49,16 +59,16 @@ export default function PostCard({
             style={styles.avatar}
           />
           <View style={styles.authorInfo}>
-            <Text style={styles.name}>
+            <Text style={[styles.name, { color: colors.text }]}>
               {post.author?.name || post.author?.username || 'Anonymous'}
             </Text>
-            <Text style={styles.username}>
+            <Text style={[styles.username, { color: colors.textSecondary }]}>
               @{((post.author?.username || 'anonymous').toLowerCase()).replace(/\s+/g, '')}
             </Text>
           </View>
         </TouchableOpacity>
         <TouchableOpacity activeOpacity={0.6}>
-          <Icon name="dots-horizontal" size={24} color="#9CA3AF" />
+          <Icon name="dots-horizontal" size={24} color={colors.textSecondary} />
         </TouchableOpacity>
       </View>
 
@@ -79,9 +89,9 @@ export default function PostCard({
       <TouchableOpacity onPress={onPress} activeOpacity={0.95}>
         <View style={styles.contentSection}>
           {post.title ? (
-             <Text style={styles.captionTitle}>{post.title}</Text>
+             <Text style={[styles.captionTitle, { color: colors.text }]}>{post.title}</Text>
           ) : null}
-          <Text style={styles.caption} numberOfLines={4}>
+          <Text style={[styles.caption, { color: colors.text }]} numberOfLines={4}>
             {post.content}
           </Text>
           
@@ -92,16 +102,16 @@ export default function PostCard({
       </TouchableOpacity>
 
       {/* Actions */}
-      <View style={styles.actionsBar}>
+      <View style={[styles.actionsBar, { backgroundColor: colors.actionBg, borderTopColor: colors.border }]}>
         <View style={styles.leftActions}>
           <TouchableOpacity style={styles.actionButton} onPress={onUpvote} activeOpacity={0.6}>
-            <Icon name="heart-outline" size={24} color="#6B7280" />
-            <Text style={styles.actionText}>{formatNumber(post.netVotes)}</Text>
+            <Icon name="heart-outline" size={24} color={colors.textSecondary} />
+            <Text style={[styles.actionText, { color: colors.textSecondary }]}>{formatNumber(post.netVotes)}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={onPress} activeOpacity={0.6}>
-            <Icon name="comment-outline" size={24} color="#6B7280" />
-            <Text style={styles.actionText}>{formatNumber(post.commentCount)}</Text>
+            <Icon name="comment-outline" size={24} color={colors.textSecondary} />
+            <Text style={[styles.actionText, { color: colors.textSecondary }]}>{formatNumber(post.commentCount)}</Text>
           </TouchableOpacity>
         </View>
 
@@ -116,23 +126,23 @@ export default function PostCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    marginBottom: 20,
-    marginHorizontal: 16,
-    borderRadius: 16,
-    padding: 16,
+    marginBottom: 12,
+    marginHorizontal: 0, // No side margins - let container handle width
+    borderRadius: 8,
+    padding: 12,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderColor: '#E5E7EB',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   authorSection: {
     flexDirection: 'row',
@@ -140,63 +150,67 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#E5E7EB',
   },
   authorInfo: {
-    marginLeft: 12,
+    marginLeft: 10,
     justifyContent: 'center',
   },
   name: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A1A1B',
   },
   username: {
-    fontSize: 13,
-    color: '#9CA3AF',
-    fontWeight: '500',
-    marginTop: 2,
+    fontSize: 12,
+    color: '#787C7E',
+    fontWeight: '400',
+    marginTop: 1,
   },
   imageContainer: {
     width: '100%',
-    aspectRatio: 4 / 3, // Instagram landscape/photo ratio
-    maxHeight: 400, // Prevent it from getting too large on big screens
-    borderRadius: 16,
+    aspectRatio: 4 / 3, // Reddit-style image ratio (not too wide)
+    maxHeight: 450,
+    borderRadius: 8,
     overflow: 'hidden',
-    backgroundColor: '#F3F4F6',
-    marginBottom: 16,
+    backgroundColor: '#F6F7F8',
+    marginBottom: 12,
   },
   postImage: {
     width: '100%',
     height: '100%',
   },
   contentSection: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   captionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111827',
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1A1A1B',
+    marginBottom: 6,
+    lineHeight: 22,
   },
   caption: {
     fontSize: 14,
     lineHeight: 20,
-    color: '#374151',
+    color: '#1A1A1B',
     marginBottom: 8,
   },
   tags: {
-    fontSize: 14,
-    color: '#3B82F6',
-    fontWeight: '600',
+    fontSize: 12,
+    color: '#0079D3',
+    fontWeight: '500',
   },
   actionsBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F2F3F5',
   },
   leftActions: {
     flexDirection: 'row',
@@ -205,15 +219,18 @@ const styles = StyleSheet.create({
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 24,
+    marginRight: 16,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 4,
   },
   actionText: {
-    marginLeft: 6,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#6B7280',
+    marginLeft: 4,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#878A8C',
   },
   saveButton: {
-    padding: 0,
+    padding: 4,
   },
 });

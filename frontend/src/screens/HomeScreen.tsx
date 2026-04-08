@@ -1,20 +1,31 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Linking, ScrollView, StyleSheet, TouchableOpacity, Animated, Dimensions, Image, ImageBackground, TextInput } from 'react-native';
+import { View, Linking, ScrollView, StyleSheet, TouchableOpacity, Animated, Dimensions, Image, ImageBackground } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Title, Card, Paragraph, ActivityIndicator, Text, Surface, Button } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import TopNavigation from '../components/TopNavigation';
+import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const { width, height } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }: any) {
+  const { isDarkMode, colors } = useTheme();
+  const { t } = useLanguage();
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [username, setUsername] = useState('Guest');
   const [weather, setWeather] = useState<any>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  const dynamicStyles = {
+    container: { backgroundColor: colors.background },
+    text: { color: colors.text },
+    textSecondary: { color: colors.textSecondary },
+    card: { backgroundColor: colors.card, borderColor: colors.border },
+  };
 
   useEffect(() => {
     checkLoginStatus();
@@ -117,13 +128,13 @@ export default function HomeScreen({ navigation }: any) {
   }
 
   const features = [
-    { title: 'Plant Analyzer', subtitle: 'AI-powered disease detection', screen: 'PlantAnalyzer', color: '#10B981', iconName: 'leaf', description: 'Upload plant photos and get an instant, accurate health diagnosis.' },
-    { title: 'Crop Suggestions', subtitle: 'Smart farming suggestions', screen: 'CropRecommendation', color: '#F59E0B', iconName: 'sprout', description: 'Personalized crop recommendations based on your soil and climate data.' },
-    { title: 'AI Assistant', subtitle: '24/7 expert chatbot', screen: 'Chatbot', color: '#3B82F6', iconName: 'robot-outline', description: 'Chat with our AI farming expert for instant guidance and personalized advice.' },
+    { title: t('plantAnalyzer'), subtitle: 'AI-powered disease detection', screen: 'PlantAnalyzer', color: '#10B981', iconName: 'leaf', description: t('plantAnalyzerDesc') },
+    { title: t('cropSuggestions'), subtitle: 'Smart farming suggestions', screen: 'CropRecommendation', color: '#F59E0B', iconName: 'sprout', description: t('cropSuggestionsDesc') },
+    { title: t('aiAssistant'), subtitle: '24/7 expert chatbot', screen: 'Chatbot', color: '#3B82F6', iconName: 'robot-outline', description: t('aiAssistantDesc') },
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, dynamicStyles.container]}>
       <Image source={require('../../assets/background.jpg')} style={styles.fixedBg} resizeMode="cover" />
       <TopNavigation activeTab="Home" />
 
@@ -133,11 +144,11 @@ export default function HomeScreen({ navigation }: any) {
         <Animated.View style={[styles.heroSection, { opacity: fadeAnim }]}>
           <View style={styles.badgeContainer}>
             <View style={styles.badgeDot} />
-            <Text style={styles.badgeText}>Top Notch Farming Platform</Text>
+            <Text style={styles.badgeText}>{t('topNotchPlatform')}</Text>
           </View>
 
           <Text style={styles.mainTitle}>
-            Regenerating The Earth{'\n'}With AI-Powered Farming
+            {t('heroTitle')}
           </Text>
 
           <TouchableOpacity
@@ -145,7 +156,7 @@ export default function HomeScreen({ navigation }: any) {
             activeOpacity={0.8}
             onPress={() => navigation.navigate(isLoggedIn ? 'PlantAnalyzer' : 'Login')}
           >
-            <Text style={styles.heroButtonText}>Get Started</Text>
+            <Text style={styles.heroButtonText}>{t('getStarted')}</Text>
             <Icon name="arrow-right" size={20} color="#FFFFFF" style={{ marginLeft: 8 }} />
           </TouchableOpacity>
 
@@ -158,11 +169,11 @@ export default function HomeScreen({ navigation }: any) {
             </View>
           </Animated.View>
 
-          {/* White wrapper wrapping features so text is readable */}
-          <View style={styles.featuresSectionWrapper}>
+          {/* Wrapper for features - uses dark mode */}
+          <View style={[styles.featuresSectionWrapper, { backgroundColor: isDarkMode ? '#121212' : '#FFFFFF' }]}>
             {/* Weather Widget */}
             <View style={styles.weatherSection}>
-              <Surface style={styles.weatherCard} elevation={2}>
+              <Surface style={[styles.weatherCard, { backgroundColor: isDarkMode ? '#1E1E1E' : '#fff' }]} elevation={2}>
                 {weatherLoading ? (
                   <ActivityIndicator size="small" color="#10B981" />
                 ) : weather ? (
@@ -172,20 +183,20 @@ export default function HomeScreen({ navigation }: any) {
                       {(function() { const info = getWeatherIcon(weather.condition); return <Icon name={info.name} size={32} color={info.color} />; })()}
                     </View>
                     <View>
-                      <Text style={styles.weatherTemp}>{weather.temperature}°C {weather.condition}</Text>
-                      <Text style={styles.weatherLocationText}>
-                        <Icon name="map-marker" size={14} color="#6B7280" /> {weather.location}
+                      <Text style={[styles.weatherTemp, { color: isDarkMode ? '#FFFFFF' : '#1E293B' }]}>{weather.temperature}°C {weather.condition}</Text>
+                      <Text style={[styles.weatherLocationText, { color: isDarkMode ? '#A0A0A0' : '#6B7280' }]}>
+                        <Icon name="map-marker" size={14} color={isDarkMode ? '#A0A0A0' : '#6B7280'} /> {weather.location}
                       </Text>
                     </View>
                   </View>
                   <View style={styles.weatherStatsRight}>
-                    <View style={styles.weatherStatBadge}>
+                    <View style={[styles.weatherStatBadge, { backgroundColor: isDarkMode ? '#2D2D2D' : '#F1F5F9' }]}>
                       <Icon name="water-percent" size={18} color="#3B82F6" />
-                      <Text style={styles.weatherSubtext}>{weather.humidity}%</Text>
+                      <Text style={[styles.weatherSubtext, { color: isDarkMode ? '#FFFFFF' : '#475569' }]}>{weather.humidity}%</Text>
                     </View>
-                    <View style={styles.weatherStatBadge}>
+                    <View style={[styles.weatherStatBadge, { backgroundColor: isDarkMode ? '#2D2D2D' : '#F1F5F9' }]}>
                       <Icon name="weather-windy" size={18} color="#64748B" />
-                      <Text style={styles.weatherSubtext}>{weather.windSpeed} km/h</Text>
+                      <Text style={[styles.weatherSubtext, { color: isDarkMode ? '#FFFFFF' : '#475569' }]}>{weather.windSpeed} km/h</Text>
                     </View>
                     <TouchableOpacity onPress={fetchWeather} style={styles.refreshButton}>
                       <Icon name="refresh" size={20} color="#10B981" />
@@ -196,7 +207,7 @@ export default function HomeScreen({ navigation }: any) {
             </Surface>
           </View>
 
-          <Text style={styles.sectionTitle}>Explore Features</Text>
+          <Text style={[styles.sectionTitle, { color: isDarkMode ? '#FFFFFF' : '#1E293B' }]}>{t('exploreFeatures')}</Text>
 
           <View style={styles.featureGrid}>
             {features.map((feature, index) => (
@@ -204,73 +215,22 @@ export default function HomeScreen({ navigation }: any) {
                 key={index}
                 activeOpacity={0.8}
                 onPress={() => navigation.navigate(feature.screen)}
-                style={styles.featureCard}
+                style={[styles.featureCard, { backgroundColor: isDarkMode ? '#1E1E1E' : '#fff' }]}
               >
                 <View style={[styles.featureIconBox, { backgroundColor: feature.color + '15' }]}>
                   <Icon name={feature.iconName} size={32} color={feature.color} />
                 </View>
-                <Text style={styles.featureTitle}>{feature.title}</Text>
-                <Text style={styles.featureDescription}>{feature.description}</Text>
+                <Text style={[styles.featureTitle, { color: isDarkMode ? '#FFFFFF' : '#1E293B' }]}>{feature.title}</Text>
+                <Text style={[styles.featureDescription, { color: isDarkMode ? '#A0A0A0' : '#64748B' }]}>{feature.description}</Text>
                 <View style={styles.featureActionRow}>
-                  <Text style={[styles.featureActionText, { color: feature.color }]}>Try Now</Text>
+                  <Text style={[styles.featureActionText, { color: feature.color }]}>{t('tryNow')}</Text>
                   <Icon name="arrow-right" size={16} color={feature.color} />
                 </View>
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* NEW Contact Section & Footer */}
-          <View style={styles.modernContactWrapper}>
-            <View style={styles.contactHeaderWrapper}>
-              <Text style={styles.modernContactTitle}>Contact Us</Text>
-              <Text style={styles.modernContactDesc}>
-                We are committed to processing the information in order to contact you and talk about your project.
-              </Text>
-
-              <View style={styles.contactInfoList}>
-                <View style={styles.contactInfoRow}>
-                  <Icon name="email-outline" size={24} color="#E9573F" style={styles.infoIcon} />
-                  <Text style={styles.infoText}>example@teamwebflow.com</Text>
-                </View>
-                <View style={styles.contactInfoRow}>
-                  <Icon name="home-outline" size={24} color="#E9573F" style={styles.infoIcon} />
-                  <Text style={styles.infoText}>4074 Ebert Summit Suite 375{"\n"}Lake Leonardchester</Text>
-                </View>
-                <View style={styles.contactInfoRow}>
-                  <Icon name="cellphone" size={24} color="#E9573F" style={styles.infoIcon} />
-                  <Text style={styles.infoText}>+44 123 654 7890</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.modernFormWrapper}>
-              <View style={styles.inputContainer}>
-                <TextInput style={styles.modernInput} placeholder="Name*" placeholderTextColor="#aaa" />
-              </View>
-              <View style={styles.inputContainer}>
-                <TextInput style={styles.modernInput} placeholder="Email*" placeholderTextColor="#aaa" keyboardType="email-address" />
-              </View>
-              <View style={styles.inputContainer}>
-                <TextInput style={styles.modernInput} placeholder="Website*" placeholderTextColor="#aaa" />
-              </View>
-              <View style={styles.inputTextAreaContainer}>
-                <TextInput style={styles.modernTextArea} placeholder="Message" placeholderTextColor="#aaa" multiline textAlignVertical="top" />
-              </View>
-
-              <TouchableOpacity activeOpacity={0.8} style={{ marginTop: 10 }}>
-                <LinearGradient
-                  colors={['#42f54b', '#1b2a38']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.gradientSubmitBtn}
-                >
-                  <Text style={styles.gradientSubmitText}>Submit</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.modernFooterWrapper}>
+          <View style={[styles.modernFooterWrapper, { backgroundColor: isDarkMode ? '#1A1A1A' : '#111827' }]}>
             <View style={styles.footerBrandSection}>
               <Text style={styles.footerBrand}>Kushal</Text>
               <Text style={styles.footerDetailsText}>
@@ -290,22 +250,26 @@ export default function HomeScreen({ navigation }: any) {
                   <Icon name="facebook" size={18} color="#af42f5" />
                 </TouchableOpacity>
               </View>
-                <View style={styles.socialIcon}><Icon name="linkedin" size={18} color="#af42f5" /></View>
-                <View style={styles.socialIcon}><Icon name="twitter" size={18} color="#af42f5" /></View>
-                <View style={styles.socialIcon}><Icon name="facebook" size={18} color="#af42f5" /></View>
+            </View>
+
+            <View style={styles.copyrightSection}>
+              <View style={styles.copyrightDivider} />
+              <Text style={styles.copyrightText}>
+                © {new Date().getFullYear()} FarmHelp. All Rights Reserved.
+              </Text>
+              <View style={styles.legalLinks}>
+                <Text style={styles.legalLink}>Privacy Policy</Text>
+                <Text style={styles.legalDot}>•</Text>
+                <Text style={styles.legalLink}>Terms of Service</Text>
+                <Text style={styles.legalDot}>•</Text>
+                <Text style={styles.legalLink}>Contact</Text>
               </View>
             </View>
-            
-            <View style={styles.footerLinksGrid}>
-  <View style={styles.footerCol}>
-    <Text style={styles.footerColTitle}>Blog</Text>
-    <Text style={styles.footerLink}>Company</Text>
-  </View>
-</View>
-</View>
-</ScrollView>
-</View>
-);
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -613,96 +577,6 @@ const styles = StyleSheet.create({
     color: '#64748B',
     textAlign: 'center',
   },
-  modernContactWrapper: {
-    marginTop: 40,
-    backgroundColor: '#FAF9F6',
-    borderRadius: 32,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-    elevation: 3,
-  },
-  contactHeaderWrapper: {
-    marginBottom: 30,
-  },
-  modernContactTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#333',
-    marginBottom: 10,
-  },
-  modernContactDesc: {
-    fontSize: 15,
-    color: '#666',
-    lineHeight: 22,
-    marginBottom: 20,
-  },
-  contactInfoList: {
-    marginTop: 10,
-  },
-  contactInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  infoIcon: {
-    marginRight: 16,
-  },
-  infoText: {
-    fontSize: 15,
-    color: '#444',
-  },
-  modernFormWrapper: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.03,
-    shadowRadius: 15,
-    elevation: 2,
-  },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  modernInput: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#eee',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: '#333',
-  },
-  inputTextAreaContainer: {
-    marginBottom: 16,
-  },
-  modernTextArea: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#eee',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 14,
-    fontSize: 15,
-    color: '#333',
-    height: 100,
-  },
-  gradientSubmitBtn: {
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gradientSubmitText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   modernFooterWrapper: {
     marginTop: 40,
     backgroundColor: '#FAF9F6',
@@ -757,6 +631,43 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 10,
+  },
+  copyrightSection: {
+    alignItems: 'center',
+    paddingTop: 20,
+  },
+  copyrightDivider: {
+    width: '100%',
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginBottom: 20,
+  },
+  copyrightText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 6,
+  },
+  copyrightSubtext: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 12,
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+  },
+  legalLink: {
+    fontSize: 13,
+    color: '#9333EA',
+    fontWeight: '500',
+  },
+  legalDot: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    marginHorizontal: 8,
   }
 });
 

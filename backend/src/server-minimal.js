@@ -261,10 +261,10 @@ app.get('/api/crops/location', async (req, res) => {
   }
 });
 
-// Chatbot route - AI farming assistant
+// Chatbot route - AI farming assistant powered by GROQ + LangChain
 app.post('/api/chatbot', async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, userId } = req.body;
     
     if (!message) {
       return res.status(400).json({ 
@@ -276,14 +276,20 @@ app.post('/api/chatbot', async (req, res) => {
     
     console.log('[CHATBOT] Received message:', message);
     
-    // Import AI service
-    const AIService = require('./services/ai');
-    const reply = await AIService.chat(message);
+    // Use enhanced chatbot controller with GROQ AI
+    const chatbotController = require('./chatbot/controllers/chatbotController');
     
-    console.log('[CHATBOT] Sending reply');
+    // Generate unique user ID if not provided
+    const userIdentifier = userId || 'user_' + Date.now();
+    
+    const result = await chatbotController.handleMessage(userIdentifier, message);
+    
+    console.log('[CHATBOT] Sending reply from', result.intent, 'with confidence', result.confidence);
     res.json({ 
-      success: true,
-      reply 
+      success: result.success,
+      reply: result.reply,
+      intent: result.intent,
+      confidence: result.confidence
     });
   } catch (err) {
     console.error('[CHATBOT ERROR]', err);

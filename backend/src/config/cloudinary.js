@@ -16,8 +16,8 @@ const storage = new CloudinaryStorage({
     folder: 'farmhelp-posts', // Folder name in Cloudinary
     allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
     transformation: [
-      { width: 1080, height: 1080, crop: 'limit' }, // Instagram standard square
-      { quality: '95' }, // High quality (90-100 is best)
+      { width: 2048, height: 2048, crop: 'limit' }, // Higher resolution limit
+      { quality: 'auto:best' }, // Best quality auto-optimization
       { fetch_format: 'auto' }, // Auto format conversion
     ],
   },

@@ -2,6 +2,7 @@ const intentRouter = require('../core/intentRouter');
 const smallTalk = require('../core/smallTalk');
 const knowledgeBase = require('../core/knowledgeBase');
 const aiService = require('../services/aiService');
+const groqService = require('../services/groqService'); // 🚀 NEW: GROQ AI Service
 const weatherService = require('../services/weatherService');
 const soilService = require('../services/soilService');
 const priceService = require('../services/priceService');
@@ -13,12 +14,21 @@ const translateService = require('../services/translateService');
 /**
  * Chatbot Controller - Main orchestrator for the chatbot system
  * Routes user messages to appropriate services based on intent detection
+ * Now powered by GROQ AI + LangChain for intelligent responses!
  */
 class ChatbotController {
   constructor() {
     // Conversation context storage (in-memory)
     this.conversationContexts = new Map();
     this.contextExpiryTime = 30 * 60 * 1000; // 30 minutes
+    
+    // Check GROQ service status
+    this.groqEnabled = groqService.isReady();
+    if (this.groqEnabled) {
+      console.log('[CHATBOT-CONTROLLER] ✅ GROQ AI Service is READY!');
+    } else {
+      console.log('[CHATBOT-CONTROLLER] ⚠️  GROQ AI Service not configured. Add GROQ_API_KEY to .env');
+    }
   }
 
   /**
@@ -41,7 +51,7 @@ class ChatbotController {
         };
       }
 
-      // Check for small talk first
+      // Check for small talk first (quick responses)
       const smallTalkResponse = smallTalk.getResponse(message);
       if (smallTalkResponse) {
         return {
@@ -276,15 +286,24 @@ class ChatbotController {
   /**
    * Handle general farming queries
    */
-  async _handleGeneralFarming(message) {
+  async _handleGeneralFarming(userId, message) {
     try {
+      // First: Check knowledge base for instant answers
       const answer = knowledgeBase.findBestMatch(message);
       
       if (answer) {
+        console.log('[GENERAL-FARMING] Knowledge base match found');
         return answer;
       }
 
-      // Fallback to AI
+      // Second: Use GROQ AI if available
+      if (this.groqEnabled) {
+        console.log('[GENERAL-FARMING] Using GROQ AI');
+        return await groqService.generateResponse(userId, message, this._getContext(userId));
+      }
+
+      // Third: Fallback to old AI service
+      console.log('[GENERAL-FARMING] Using fallback AI');
       return await aiService.generateAIResponse(message, this._getContext(userId));
     } catch (error) {
       console.error('[GENERAL-FARMING-HANDLER] Error:', error.message);
@@ -293,10 +312,18 @@ class ChatbotController {
   }
 
   /**
-   * Handle fallback with AI
+   * Handle fallback with AI (GROQ preferred)
    */
   async _handleFallbackAI(userId, message, context) {
     try {
+      // Try GROQ first (with tools for better results)
+      if (this.groqEnabled) {
+        console.log('[FALLBACK-AI] Using GROQ AI with tools');
+        return await groqService.generateResponseWithTools(userId, message);
+      }
+
+      // Fallback to old AI service
+      console.log('[FALLBACK-AI] Using legacy AI service');
       return await aiService.generateAIResponse(message, context);
     } catch (error) {
       console.error('[FALLBACK-AI-HANDLER] Error:', error.message);

@@ -33,7 +33,7 @@ export default function CreatePostScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3], // Match the display ratio precisely
-        quality: 0.8,
+        quality: 1.0, // Full quality - no compression
       });
 
       if (!result.canceled && result.assets[0]) {

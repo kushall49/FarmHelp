@@ -1,11 +1,13 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Alert, Image, ScrollView, TextInput, SafeAreaView, Platform, StatusBar } from 'react-native';
+import { View, StyleSheet, FlatList, RefreshControl, TouchableOpacity, Alert, SafeAreaView, Platform, StatusBar } from 'react-native';
 import { Text, FAB, ActivityIndicator } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import PostCard from '../components/PostCard';
 import TopNavigation from '../components/TopNavigation';
+import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const API_URL = 'http://localhost:4000';
 
@@ -14,8 +16,16 @@ export default function CommunityScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const navigation = useNavigation();
+  const { isDarkMode, colors } = useTheme();
+  const { t } = useLanguage();
+
+  const dynamicStyles = {
+    background: isDarkMode ? '#121212' : '#F3F4F6',
+    cardBg: isDarkMode ? '#1E1E1E' : '#FFFFFF',
+    text: isDarkMode ? '#FFFFFF' : '#1A1A1B',
+    textSecondary: isDarkMode ? '#A0A0A0' : '#6B7280',
+  };
 
   useEffect(() => {
     checkLoginStatus();
@@ -108,35 +118,8 @@ export default function CommunityScreen() {
   };
 
   const renderHeader = () => (
-    <View style={styles.headerContainer}>
-      <View style={styles.topBar}>
-        <TouchableOpacity>
-          <Icon name="menu" size={28} color="#000" />
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <View>
-            <Image 
-              source={{ uri: 'https://api.dicebear.com/7.x/faces/svg?seed=MyProfile' }} 
-              style={styles.profileAvatar}
-            />
-            <View style={styles.activeDot} />
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.searchContainer}>
-        <Icon name="magnify" size={22} color="#9CA3AF" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search..."
-          placeholderTextColor="#9CA3AF"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-        <Icon name="microphone-outline" size={22} color="#9CA3AF" style={styles.micIcon} />
-      </View>
-
-      <Text style={styles.feedsTitle}>Feeds</Text>
+    <View style={[styles.headerContainer, { backgroundColor: dynamicStyles.background }]}>
+      <Text style={[styles.feedsTitle, { color: dynamicStyles.text }]}>{t('communityFeed')}</Text>
     </View>
   );
 
@@ -147,40 +130,44 @@ export default function CommunityScreen() {
       onProfilePress={handleProfilePress}
       onUpvote={() => handleVote(item._id, 'upvote')}
       onDownvote={() => handleVote(item._id, 'downvote')}
+      isDarkMode={isDarkMode}
     />
   );
 
   if (loading) {
     return (
-      <View style={styles.centered}>
+      <View style={[styles.centered, { backgroundColor: dynamicStyles.background }]}>
         <ActivityIndicator size="large" color="#10B981" />
-        <Text style={styles.loadingText}>Loading community feeds...</Text>
+        <Text style={[styles.loadingText, { color: dynamicStyles.textSecondary }]}>{t('loading')}</Text>
       </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: dynamicStyles.background }]}>
       <TopNavigation activeTab="Community" />
-      <View style={styles.container}>
-        <FlatList
-          data={posts}
-          renderItem={renderPost}
-          keyExtractor={(item) => item._id}
-          ListHeaderComponent={renderHeader}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Icon name="post-outline" size={64} color="#D1D5DB" />
-              <Text style={styles.emptyText}>No posts yet</Text>
-              <Text style={styles.emptySubtext}>Be the first to share!</Text>
-            </View>
-          }
-        />
+      <View style={[styles.container, { backgroundColor: dynamicStyles.background }]}>
+        {/* Reddit-style centered content wrapper */}
+        <View style={[styles.contentWrapper, { backgroundColor: dynamicStyles.background }]}>
+          <FlatList
+            data={posts}
+            renderItem={renderPost}
+            keyExtractor={(item) => item._id}
+            ListHeaderComponent={renderHeader}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Icon name="post-outline" size={64} color={dynamicStyles.textSecondary} />
+                <Text style={[styles.emptyText, { color: dynamicStyles.text }]}>{t('noPosts')}</Text>
+                <Text style={[styles.emptySubtext, { color: dynamicStyles.textSecondary }]}>Be the first to share!</Text>
+              </View>
+            }
+          />
+        </View>
         <FAB
           icon="plus"
           style={styles.fab}
@@ -196,18 +183,25 @@ export default function CommunityScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F4F6',
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight || 25 : 0,
   },
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F4F6',
+  },
+  contentWrapper: {
+    flex: 1,
+    maxWidth: 700,
+    width: '100%',
+    alignSelf: 'center',
+    backgroundColor: '#F3F4F6',
   },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F3F4F6',
   },
   loadingText: {
     marginTop: 16,
@@ -215,65 +209,18 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   headerContainer: {
-    backgroundColor: '#FFFFFF',
-    paddingBottom: 4,
-  },
-  topBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-  },
-  profileAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#E5E7EB',
-  },
-  activeDot: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#F97316',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#F3F4F6',
-    borderRadius: 24,
-    marginHorizontal: 20,
-    paddingHorizontal: 16,
-    height: 48,
-    marginTop: 10,
-    marginBottom: 24,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#1F2937',
-    paddingVertical: 0,
-  },
-  micIcon: {
-    marginLeft: 8,
+    paddingVertical: 16,
   },
   feedsTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#111827',
-    paddingHorizontal: 20,
-    marginBottom: 16,
+    color: '#1A1A1B',
+    paddingHorizontal: 16,
   },
   listContainer: {
     paddingBottom: 80,
+    paddingHorizontal: 16,
   },
   emptyContainer: {
     alignItems: 'center',
