@@ -1,17 +1,26 @@
 import axios from 'axios';
-import { Platform } from 'react-native';
+import { API_BASE_URL } from '../config/serviceConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
-// Use localhost for web, local IP for mobile devices
-const API_URL = Platform.OS === 'web' 
-  ? 'http://localhost:4000/api' 
-  : 'http://172.21.146.174:4000/api';
-
-const api = axios.create({ baseURL: API_URL, timeout: 10000 });
+export const axiosInstance = axios.create({ baseURL: API_BASE_URL, timeout: 10000 });
 
 // Add auth token to requests
-api.interceptors.request.use(async (config) => {
-  const token = await AsyncStorage.getItem('token');
+axiosInstance.interceptors.request.use(async (config) => {
+  let token: string | null = null;
+  try {
+    token = await AsyncStorage.getItem('token');
+  } catch (_e) {
+    token = null;
+  }
+
+  if (!token && Platform.OS === 'web') {
+    try {
+      token = localStorage.getItem('token');
+    } catch (_e) {
+      token = null;
+    }
+  }
   console.log('[API] Request to:', config.url);
   console.log('[API] Token present:', !!token);
   
@@ -24,7 +33,7 @@ api.interceptors.request.use(async (config) => {
 });
 
 // Add response interceptor for better error handling
-api.interceptors.response.use(
+axiosInstance.interceptors.response.use(
   (response) => {
     console.log('[API] Response from:', response.config.url);
     console.log('[API] Status:', response.status);
@@ -44,31 +53,31 @@ api.interceptors.response.use(
 );
 
 export default {
-  signup: (data: any) => api.post('/auth/signup', data),
-  login: (data: any) => api.post('/auth/login', data),
-  uploadPlant: (formData: any) => api.post('/plant/upload-plant', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  getCrops: (params: any) => api.get('/crops', { params }),
-  getLocationBasedCrops: (params: { lat: number; long: number }) => api.get('/crops/location', { params }),
-  chatbot: (message: string) => api.post('/chatbot', { message }),
+  signup: (data: any) => axiosInstance.post('/auth/signup', data),
+  login: (data: any) => axiosInstance.post('/auth/login', data),
+  uploadPlant: (formData: any) => axiosInstance.post('/plant/upload-plant', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  getCrops: (params: any) => axiosInstance.get('/crops', { params }),
+  getLocationBasedCrops: (params: { lat: number; long: number }) => axiosInstance.get('/crops/location', { params }),
+  chatbot: (message: string) => axiosInstance.post('/chatbot', { message }),
   
   // Services Marketplace APIs
   // Service Listings
-  getServiceListings: (params: any) => api.get('/services', { params }),
-  getServiceById: (id: string) => api.get(`/services/${id}`),
-  createServiceListing: (data: any) => api.post('/services', data),
-  updateServiceListing: (id: string, data: any) => api.put(`/services/${id}`, data),
-  deleteServiceListing: (id: string) => api.delete(`/services/${id}`),
-  trackCall: (id: string) => api.post(`/services/${id}/track-call`),
+  getServiceListings: (params: any) => axiosInstance.get('/services', { params }),
+  getServiceById: (id: string) => axiosInstance.get(`/services/${id}`),
+  createServiceListing: (data: any) => axiosInstance.post('/services', data),
+  updateServiceListing: (id: string, data: any) => axiosInstance.put(`/services/${id}`, data),
+  deleteServiceListing: (id: string) => axiosInstance.delete(`/services/${id}`),
+  trackCall: (id: string) => axiosInstance.post(`/services/${id}/track-call`),
   
   // Job Requests
-  getJobRequests: (params: any) => api.get('/jobs', { params }),
-  getJobById: (id: string) => api.get(`/jobs/${id}`),
-  createJobRequest: (data: any) => api.post('/jobs', data),
-  updateJobRequest: (id: string, data: any) => api.put(`/jobs/${id}`, data),
-  deleteJobRequest: (id: string) => api.delete(`/jobs/${id}`),
-  trackResponse: (id: string) => api.post(`/jobs/${id}/track-response`),
+  getJobRequests: (params: any) => axiosInstance.get('/jobs', { params }),
+  getJobById: (id: string) => axiosInstance.get(`/jobs/${id}`),
+  createJobRequest: (data: any) => axiosInstance.post('/jobs', data),
+  updateJobRequest: (id: string, data: any) => axiosInstance.put(`/jobs/${id}`, data),
+  deleteJobRequest: (id: string) => axiosInstance.delete(`/jobs/${id}`),
+  trackResponse: (id: string) => axiosInstance.post(`/jobs/${id}/track-response`),
   
   // Ratings
-  rateProvider: (providerId: string, data: any) => api.post(`/users/rate/${providerId}`, data),
-  getProviderRatings: (providerId: string, params: any) => api.get(`/users/ratings/${providerId}`, { params }),
+  rateProvider: (providerId: string, data: any) => axiosInstance.post(`/users/rate/${providerId}`, data),
+  getProviderRatings: (providerId: string, params: any) => axiosInstance.get(`/users/ratings/${providerId}`, { params }),
 };

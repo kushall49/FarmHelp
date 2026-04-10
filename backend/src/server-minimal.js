@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const http = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 const app = express();
@@ -96,6 +98,7 @@ app.use('/api/community', communityRoutes);
 // Services Marketplace routes - New OLX-style marketplace for farmers
 const serviceRoutes = require('./routes/serviceRoutes');
 app.use('/api/services', serviceRoutes);
+const { initSocketService } = require('./services/socketService');
 
 const jobRoutes = require('./routes/jobRoutes');
 app.use('/api/jobs', jobRoutes);
@@ -348,8 +351,17 @@ app.use((err, req, res, next) => {
 // SERVER STARTUP
 // ============================================
 
-const PORT = process.env.PORT || 4000;
-const server = app.listen(PORT, () => {
+const PORT = 4000;
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+initSocketService(io);
+
+const server = httpServer.listen(PORT, () => {
   console.log('\n');
   console.log('╔═══════════════════════════════════════════════════════╗');
   console.log('║          🚀 FarmHelp Backend Server Started           ║');
