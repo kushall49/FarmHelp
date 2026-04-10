@@ -43,7 +43,7 @@ function corsOriginDelegate(origin, callback) {
       return callback(null, true);
     }
   } catch (_) {
-    return callback(new Error('Invalid Origin'));
+    return callback(null, false);
   }
   if (process.env.NODE_ENV !== 'production') {
     if (/^http:\/\/192\.168\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
@@ -52,7 +52,7 @@ function corsOriginDelegate(origin, callback) {
     }
   }
   console.warn('[CORS] Blocked origin:', origin);
-  return callback(new Error('Not allowed by CORS'));
+  return callback(null, false);
 }
 
 // ============================================
