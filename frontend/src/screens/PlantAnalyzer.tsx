@@ -20,12 +20,20 @@ interface PickedImage {
 interface AnalysisResult {
   crop?: string;
   disease?: string;
+  prediction?: string;
   confidence?: number;
   confidence_percentage?: string;
+  confidencePercentage?: number | string;
   predictions?: Array<{ class_name: string; confidence: number }>;
   recommendation?: string;
-  recommendations?: string;
+  recommendations?: any;
   treatment?: string;
+  cure?: {
+    immediate?: string[];
+    organic?: string[];
+    chemical?: string[];
+    prevention?: string[];
+  };
   fertilizers?: any;
   gradcam?: string;
   processing_time_ms?: number;
@@ -65,6 +73,59 @@ const renderTextSafely = (data: any): string => {
     return lines.length > 0 ? lines.join('\n\n') : JSON.stringify(data, null, 2).replace(/[{}"]/g, '');
   }
   return String(data);
+};
+
+const hasDisplayableContent = (data: any): boolean => {
+  if (data == null) return false;
+  if (typeof data === 'string') return data.trim().length > 0;
+  if (typeof data === 'number' || typeof data === 'boolean') return true;
+  if (Array.isArray(data)) return data.length > 0 && data.some(item => hasDisplayableContent(item));
+  if (typeof data === 'object') {
+    const values = Object.values(data);
+    return values.length > 0 && values.some(value => hasDisplayableContent(value));
+  }
+  return false;
+};
+
+const normalizeAnalysisResult = (raw: any): AnalysisResult => {
+  if (!raw || typeof raw !== 'object') return {};
+
+  const parsedConfidence = typeof raw.confidence === 'number'
+    ? raw.confidence
+    : Number.parseFloat(String(raw.confidence || '0'));
+  const confidence = Number.isFinite(parsedConfidence) ? parsedConfidence : 0;
+
+  const confidenceRaw = raw.confidence_percentage ?? raw.confidencePercentage;
+  const confidencePercentage = confidenceRaw != null
+    ? String(confidenceRaw).replace('%', '')
+    : (confidence > 0 ? String(Math.round(confidence * 100)) : '');
+
+  const diseaseName = raw.disease?.name || raw.disease || raw.prediction || 'Analysis Complete';
+
+  let fertilizers = raw.fertilizers;
+  if (Array.isArray(raw.fertilizers)) {
+    fertilizers = { recommended: raw.fertilizers };
+  } else if (raw.fertilizers?.recommendations && !raw.fertilizers?.recommended) {
+    fertilizers = { ...raw.fertilizers, recommended: raw.fertilizers.recommendations };
+  }
+
+  const cure = raw.cure;
+  const cureSteps = Array.isArray(cure?.immediate) ? cure.immediate : [];
+  const fallbackRecommendation = cureSteps.length > 0
+    ? `Immediate actions:\n${cureSteps.map((s: string) => `• ${s}`).join('\n')}`
+    : undefined;
+
+  return {
+    ...raw,
+    crop: raw.crop || 'Unknown',
+    disease: String(diseaseName),
+    confidence,
+    confidence_percentage: confidencePercentage,
+    recommendation: raw.recommendation || raw.recommendations?.summary || fallbackRecommendation,
+    recommendations: raw.recommendations || raw.cure,
+    treatment: raw.treatment || raw.cure,
+    fertilizers
+  };
 };
 
 export default function PlantAnalyzer(): JSX.Element {
@@ -209,9 +270,11 @@ export default function PlantAnalyzer(): JSX.Element {
       
       // Handle nested result structure
       if (res.data.result) {
-        analysisResult = res.data.result;
+        analysisResult = normalizeAnalysisResult(res.data.result);
+      } else if (res.data.analysis) {
+        analysisResult = normalizeAnalysisResult(res.data.analysis);
       } else if (res.data.success !== false) {
-        analysisResult = res.data;
+        analysisResult = normalizeAnalysisResult(res.data);
       } else {
         throw new Error(res.data.error || 'Analysis failed');
       }
@@ -450,7 +513,9 @@ export default function PlantAnalyzer(): JSX.Element {
               <View style={styles.statBox}>
                 <Text style={styles.statLabel}>Confidence</Text>
                 <Text style={[styles.statValue, { color: getSeverityColor(Number(result.confidence)) }]}>
-                  {result.confidence ? `${Math.round(Number(result.confidence) * 100)}%` : (result.confidence_percentage ? `${result.confidence_percentage}%` : 'N/A')}
+                  {result.confidence
+                    ? `${Math.round(Number(result.confidence) * 100)}%`
+                    : (result.confidence_percentage ? `${String(result.confidence_percentage).replace('%', '')}%` : 'N/A')}
                 </Text>
               </View>
               <View style={styles.divider} />
@@ -463,11 +528,13 @@ export default function PlantAnalyzer(): JSX.Element {
             </View>
           </Card>
 
-          {(result.recommendations || result.recommendation) ? (
+          {(hasDisplayableContent(result.recommendations) || hasDisplayableContent(result.recommendation)) ? (
             <Card style={[styles.modernCard, styles.lightCard]}>
               <Text style={styles.cardSectionTitle}>💡 What to do next</Text>
               <Text style={styles.cardBodyText}>
-                {result.recommendations ? renderTextSafely(result.recommendations) : renderTextSafely(result.recommendation)}
+                {hasDisplayableContent(result.recommendation)
+                  ? renderTextSafely(result.recommendation)
+                  : renderTextSafely(result.recommendations)}
               </Text>
             </Card>
           ) : null}

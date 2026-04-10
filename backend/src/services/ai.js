@@ -153,22 +153,22 @@ const AIService = {
       }
     }
     
-    // PRODUCTION: All retries failed, return standardized error response
+    // All retries failed: return explicit failure instead of a fake prediction
     console.error('[AI-SERVICE] ❌ All retry attempts exhausted');
     console.error('[AI-SERVICE] Final error:', lastError?.message);
     
     return {
       success: false,
-      error: lastError?.message || 'ML service unavailable',
-      error_code: lastError?.code || 'ML_SERVICE_ERROR',
-      layer: 'ml_service',
+      fallback: true,
+      fallback_reason: lastError?.message || 'ML service unavailable',
+      error: 'ML service unavailable. Please start model service and retry.',
       timestamp: Date.now(),
-      crop: 'Unknown',
-      disease: 'Service Unavailable',
-      confidence: 0.0,
+      crop: null,
+      disease: null,
+      confidence: 0,
       confidence_percentage: '0.00%',
       predictions: [],
-      recommendation: 'Plant disease detection service is currently unavailable. Please ensure the ML service is running and try again.',
+      recommendation: null,
       recommendations: {},
       fertilizers: []
     };
