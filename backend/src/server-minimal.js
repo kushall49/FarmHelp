@@ -355,7 +355,8 @@ app.use((err, req, res, next) => {
 // SERVER STARTUP
 // ============================================
 
-const PORT = 4000;
+// Render/Railway/etc. inject PORT; local dev defaults to 4000
+const PORT = Number.parseInt(process.env.PORT, 10) || 4000;
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
   cors: {
@@ -365,7 +366,7 @@ const io = new Server(httpServer, {
 });
 initSocketService(io);
 
-const server = httpServer.listen(PORT, () => {
+const server = httpServer.listen(PORT, '0.0.0.0', () => {
   console.log('\n');
   console.log('╔═══════════════════════════════════════════════════════╗');
   console.log('║          🚀 FarmHelp Backend Server Started           ║');
