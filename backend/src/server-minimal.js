@@ -11,17 +11,60 @@ app.disable('x-powered-by');
 // Import Crop model
 const Crop = require('./models/Crop.ts').default || require('./models/Crop.ts');
 
+/**
+ * CORS: localhost + Expo + LAN (dev) + *.vercel.app (deployed web) + CORS_ORIGINS env.
+ * The old list used "192.168.*.*" which the cors package does NOT treat as a wildcard.
+ */
+function corsOriginDelegate(origin, callback) {
+  const devLocal = [
+    'http://localhost:19000',
+    'http://localhost:19001',
+    'http://localhost:19003',
+    'http://localhost:19006',
+    'http://localhost:8081',
+    'http://localhost:3000',
+    'http://127.0.0.1:19006',
+    'http://127.0.0.1:8081',
+  ];
+  const fromEnv = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  if (!origin) {
+    return callback(null, true);
+  }
+  if (devLocal.includes(origin) || fromEnv.includes(origin)) {
+    return callback(null, true);
+  }
+  try {
+    const { hostname, protocol } = new URL(origin);
+    if (hostname.endsWith('.vercel.app') && (protocol === 'https:' || protocol === 'http:')) {
+      return callback(null, true);
+    }
+  } catch (_) {
+    return callback(new Error('Invalid Origin'));
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    if (/^http:\/\/192\.168\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin) ||
+        /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}(:\d+)?$/.test(origin)) {
+      return callback(null, true);
+    }
+  }
+  console.warn('[CORS] Blocked origin:', origin);
+  return callback(new Error('Not allowed by CORS'));
+}
+
 // ============================================
 // MIDDLEWARE CONFIGURATION (ORDER IS CRITICAL!)
 // ============================================
 
-// 1. CORS - Enable Cross-Origin Resource Sharing
-// Must be first to handle preflight requests
+// 1. CORS - Must be first to handle preflight requests
 app.use(cors({
-  origin: ['http://localhost:19000', 'http://localhost:19001', 'http://localhost:19003', 'http://localhost:19006', 'http://localhost:8081', 'http://192.168.*.*:19000'],
+  origin: corsOriginDelegate,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 // 2. JSON Body Parser - CRITICAL: Must be placed BEFORE route definitions!
@@ -380,7 +423,7 @@ const server = httpServer.listen(PORT, '0.0.0.0', () => {
   console.log('   💬 Chatbot:       POST /api/chatbot');
   console.log('\n[✓] Middleware Order:');
   console.log('   1. CORS');
-  console.log('   2. express.json() ← Body Parser (CRITICAL!)');
+  console.log('   2. express.json() — JSON body parser (must run before routes)');
   console.log('   3. express.urlencoded()');
   console.log('   4. Request Logger');
   console.log('   5. Routes');
