@@ -1,6 +1,7 @@
 Flask==3.0.0
 flask-cors==4.0.0
 python-dotenv==1.0.1
+python-json-logger==2.0.7
 tensorflow-cpu==2.16.1
 pillow>=11.0.0
 opencv-python-headless==4.10.0.84
