@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String       @id @default(uuid())
+  phone            String       @unique
+  name             String
+  role             String       @default("FARMER")
+  rating           Float        @default(5.0)
+  totalJobs        Int          @default(0)
+  createdAt        DateTime     @default(now())
+
+  vehicles         Vehicle[]
+  requestsMade     JobRequest[] @relation("FarmerRequests")
+  requestsAccepted JobRequest[] @relation("ProviderJobs")
+}
+
+model Vehicle {
+  id          String  @id @default(uuid())
+  providerId  String
+  provider    User    @relation(fields: [providerId], references: [id])
+  category    String  // "TRACTOR", "HARVESTER", "PUMP", "LABOR"
+  description String?
+  hourlyRate  Float
+  isVerified  Boolean @default(false)
+}
+
+model JobRequest {
+  id              String        @id @default(uuid())
+  farmerId        String
+  providerId      String?
+  farmer          User          @relation("FarmerRequests", fields: [farmerId], references: [id])
+  provider        User?         @relation("ProviderJobs", fields: [providerId], references: [id])
+
+  categoryNeeded  String
+  status          String     @default("SEARCHING")
+  paymentStatus   String     @default("PENDING")
+
+  pickupLat       Float
+  pickupLng       Float
+  address         String?
+
+  estimatedPrice  Float?
+  finalPrice      Float?
+
+  createdAt       DateTime      @default(now())
+  acceptedAt      DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+}

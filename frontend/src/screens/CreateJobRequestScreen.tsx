@@ -14,6 +14,7 @@ import {
   IconButton,
   Chip,
 } from 'react-native-paper';
+import * as Location from 'expo-location';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import api from '../services/api';
 import { useSafeGoBack } from '../navigation/AppNavigator';
@@ -47,6 +48,36 @@ export default function CreateJobRequestScreen({ navigation }: any) {
   
   const [serviceMenuVisible, setServiceMenuVisible] = useState(false);
   const [districtMenuVisible, setDistrictMenuVisible] = useState(false);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+
+  const fetchCurrentLocation = async () => {
+    setIsFetchingLocation(true);
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Allow location access to auto-fill address');
+        setIsFetchingLocation(false);
+        return;
+      }
+      let loc = await Location.getCurrentPositionAsync({});
+      let reverseGeo = await Location.reverseGeocodeAsync({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude
+      });
+      if (reverseGeo && reverseGeo.length > 0) {
+        const addr = reverseGeo[0];
+        if (addr.subregion) setDistrict(addr.subregion); // Subregion is often District
+        if (addr.district) setDistrict(addr.district);
+        if (addr.city) setTaluk(addr.city);
+        if (addr.street || addr.name) setVillage(addr.street || addr.name || '');
+      }
+    } catch (e) {
+      console.warn("Failed to get location", e);
+      Alert.alert('Error', 'Could not fetch current location.');
+    } finally {
+      setIsFetchingLocation(false);
+    }
+  };
 
   const handleSubmit = async () => {
     console.log('[CREATE JOB] Submit button pressed');
@@ -213,6 +244,15 @@ export default function CreateJobRequestScreen({ navigation }: any) {
             ))}
           </ScrollView>
         </Menu>
+
+        <Button 
+          mode="text" 
+          loading={isFetchingLocation}
+          onPress={fetchCurrentLocation}
+          style={{ alignSelf: 'flex-start', marginBottom: 10 }}
+        >
+          Use Current Location Map (Auto-fill)
+        </Button>
 
         <Text style={styles.label}>Taluk *</Text>
         <TextInput activeOutlineColor="#1a7a4a" outlineColor="#ddeee4" textColor="#1a2e1e" mode="outlined" value={taluk} onChangeText={setTaluk} style={styles.input} />

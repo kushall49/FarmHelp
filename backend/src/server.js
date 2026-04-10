@@ -6,8 +6,7 @@ require('dotenv').config();
 const connectDB = require('./config/db');
 const plantRoutes = require('./routes/plant');
 const machinesRoutes = require('./routes/machines');
-// Temporarily comment out to test
-// const chatbotRoutes = require('./routes/chatbot');
+const jobRoutes = require('./routes/jobs'); // Rest Gateway for Rapido Jobs
 
 const app = express();
 app.disable('x-powered-by');
@@ -28,7 +27,7 @@ app.get('/', (req, res) => {
 // Routes
 app.use('/api/plant', plantRoutes);
 app.use('/api/machines', machinesRoutes);
-// app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/jobs', jobRoutes);
 
 // Temporary inline chatbot route for testing
 app.post('/api/chatbot', async (req, res) => {
@@ -52,7 +51,16 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: err.message });
 });
 
+const http = require('http');
+const { initRealTimeSystem } = require('./socket');
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const httpServer = http.createServer(app);
+
+// Mount Real-Time Engine (Socket.io)
+const io = initRealTimeSystem(httpServer);
+
+httpServer.listen(PORT, () => {
   console.log(`[SERVER] Running on http://localhost:${PORT}`);
+  console.log(`[REAL-TIME] WebSocket and Redis systems Initialized!`);
 });

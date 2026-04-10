@@ -515,6 +515,13 @@ app.post('/api/chatbot', authMiddleware, async (req, res) => {
 });
 
 // ============================================
+// SERVICE ROUTES
+// ============================================
+
+const serviceRoutes = require('./routes/serviceRoutes');
+app.use('/api/services', serviceRoutes);
+
+// ============================================
 // ERROR HANDLING
 // ============================================
 

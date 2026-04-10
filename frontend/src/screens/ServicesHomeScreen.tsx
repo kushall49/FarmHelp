@@ -246,6 +246,29 @@ export default function ServicesHomeScreen({ navigation, route }: any) {
           </TouchableOpacity>
         </View>
 
+        {/* Real-time Map and Duty Options */}
+        <View style={{ flexDirection: 'row', paddingHorizontal: 16, marginBottom: 12, gap: 10 }}>
+          <Button 
+            mode="contained" 
+            buttonColor="#000"
+            icon="lightning-bolt" 
+            style={{ flex: 1 }}
+            onPress={() => navigation.navigate('LiveMap')}
+          >
+            Book Now
+          </Button>
+          <Button 
+            mode="contained-tonal"
+            buttonColor="#ffeb3b"
+            textColor="#000"
+            icon="steering" 
+            style={{ flex: 1 }}
+            onPress={() => navigation.navigate('ProviderDuty')}
+          >
+            Go on Duty
+          </Button>
+        </View>
+
         {/* District Filter */}
         <Menu
           visible={districtMenuVisible}

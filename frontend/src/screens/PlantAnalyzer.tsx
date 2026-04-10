@@ -37,6 +37,36 @@ interface ApiResponse {
   result: AnalysisResult;
 }
 
+const renderTextSafely = (data: any): string => {
+  if (!data) return '';
+  if (typeof data === 'string') return data;
+  if (Array.isArray(data)) {
+    return data.map(item => {
+      if (typeof item === 'string') return `• ${item}`;
+      if (item && typeof item === 'object') {
+        // Extract known fields if present
+        const text = item.text || item.description || item.name || Object.values(item)[0];
+        return `• ${text ? String(text) : JSON.stringify(item)}`;
+      }
+      return `• ${String(item)}`;
+    }).join('\n\n');
+  }
+  if (typeof data === 'object') {
+    const lines = [];
+    for (const [key, value] of Object.entries(data)) {
+      if (value && ['string', 'number', 'boolean'].includes(typeof value)) {
+        const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        lines.push(`${formattedKey}: ${value}`);
+      } else if (Array.isArray(value)) {
+        const formattedKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        lines.push(`${formattedKey}:\n  ${value.join('\n  ')}`);
+      }
+    }
+    return lines.length > 0 ? lines.join('\n\n') : JSON.stringify(data, null, 2).replace(/[{}"]/g, '');
+  }
+  return String(data);
+};
+
 export default function PlantAnalyzer(): JSX.Element {
   // ✅ NAVIGATION FIX: Use safe navigation with deep link fallback
   const navigation = useNavigation();
@@ -302,197 +332,190 @@ export default function PlantAnalyzer(): JSX.Element {
     <View 
       style={{ flex: 1 }} 
       onStartShouldSetResponder={() => true}
-      onResponderRelease={(e) => {
-        // Prevent any bubbling that might trigger navigation
-        e.stopPropagation();
-      }}
+      onResponderRelease={(e) => { e.stopPropagation(); }}
     >
     <ScrollView 
       ref={scrollViewRef}
       style={styles.container}
-      contentContainerStyle={{ paddingBottom: 50 }}
+      contentContainerStyle={{ paddingBottom: 60 }}
+      showsVerticalScrollIndicator={false}
     >
-      <Surface style={styles.header}>
-        <Text variant="headlineMedium" style={styles.title}>🔬 Plant Health Analyzer</Text>
-        <Text style={styles.subtitle}>Upload or capture plant image for AI analysis</Text>
-      </Surface>
-
-      <View style={styles.buttonRow}>
-        <Button mode="contained" onPress={pickImage} icon="image" style={styles.button} buttonColor="#4CAF50">
-          Gallery
-        </Button>
-        <Button mode="contained" onPress={takePhoto} icon="camera" style={styles.button} buttonColor="#2196F3">
-          Camera
-        </Button>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.title}>Plant Analyzer</Text>
+          <Text style={styles.subtitle}>AI-powered crop disease detection</Text>
+        </View>
+        <Surface style={styles.headerIconContainer} elevation={0}>
+          <Text style={{ fontSize: 28 }}>🌿</Text>
+        </Surface>
       </View>
 
-      {image && (
-        <Card style={styles.imageCard}>
-          <Image source={{ uri: sanitizeImageUri(image.uri, '') }} style={styles.image} />
-          <Card.Actions>
-            <Button onPress={() => { setImage(null); setResult(null); }}>Remove</Button>
+      {!image ? (
+        <View style={styles.uploadSection}>
+          <View style={styles.dashedBox}>
+            <View style={styles.iconCircle}>
+              <Text style={{ fontSize: 32 }}>📸</Text>
+            </View>
+            <Text style={styles.uploadTitle}>Upload Plant Image</Text>
+            <Text style={styles.uploadSubtitle}>Take a photo of the affected leaf or upload from gallery</Text>
+            
+            <View style={styles.buttonRow}>
+              <Button 
+                mode="outlined" 
+                onPress={pickImage} 
+                icon="image" 
+                style={[styles.actionButton, styles.galleryBtn]}
+                textColor="#10B981"
+                buttonColor="#ECFDF5"
+              >
+                Gallery
+              </Button>
+              <Button 
+                mode="contained" 
+                onPress={takePhoto} 
+                icon="camera" 
+                style={[styles.actionButton, styles.cameraBtn]}
+                buttonColor="#10B981"
+              >
+                Camera
+              </Button>
+            </View>
+          </View>
+        </View>
+      ) : (
+        <Card style={styles.modernCard}>
+          <Image source={{ uri: sanitizeImageUri(image.uri, '') }} style={styles.previewImage} />
+          <View style={styles.imageOverlay}>
+            <View style={styles.imageActionRow}>
+              <Button 
+                mode="contained" 
+                buttonColor="rgba(0,0,0,0.6)" 
+                textColor="#fff"
+                onPress={() => { setImage(null); setResult(null); }}
+                style={styles.overlayBtn}
+                icon="close"
+              >
+                Clear
+              </Button>
+            </View>
+          </View>
+          
+          <View style={styles.analyzeContainer}>
             <Button 
               mode="contained" 
               onPress={(e: any) => {
-                // 🔒 CRITICAL: Prevent ALL default behaviors on web
                 if (e && e.preventDefault) e.preventDefault();
                 if (e && e.stopPropagation) e.stopPropagation();
-                console.log('[ANALYZER] 🚨 ANALYZE BUTTON CLICKED - Navigation prevented');
                 analyze();
                 return false;
               }} 
               disabled={loading} 
-              buttonColor="#4CAF50"
+              style={styles.analyzeBtn}
+              contentStyle={styles.analyzeBtnContent}
+              buttonColor="#10B981"
             >
-              {loading ? 'Analyzing...' : '🔍 Analyze Now'}
+              {loading ? 'Processing Image...' : 'Run Diagnostics'}
             </Button>
-          </Card.Actions>
+          </View>
         </Card>
       )}
 
-      {loading && (
+      {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4CAF50" />
-          <Text style={styles.loadingText}>AI is analyzing your plant...</Text>
-          <Text style={styles.loadingSubtext}>This may take a few seconds</Text>
+          <ActivityIndicator size={48} color="#10B981" />
+          <Text style={styles.loadingText}>Analyzing Plant Health...</Text>
+          <Text style={styles.loadingSubtext}>Our AI is scanning for millions of patterns</Text>
         </View>
-      )}
+      ) : null}
 
-      {result && !loading && (
-        <Card style={styles.resultCard} nativeID="inline-plant-results">
-          <Card.Content>
-            <Text style={{ fontSize: 10, color: '#888', marginBottom: 8 }}>🔒 INLINE RESULTS (No Navigation)</Text>
-            <View style={styles.resultHeader}>
-              <Text variant="titleLarge" style={styles.resultTitle}>📊 Analysis Results</Text>
-              {result.confidence && (
-                <Chip 
-                  mode="flat" 
-                  style={[styles.confidenceChip, { backgroundColor: getSeverityColor(result.confidence) }]}
-                  textStyle={{ color: '#fff', fontWeight: 'bold' }}
-                >
-                  {Math.round(result.confidence * 100)}%
-                </Chip>
-              )}
-              {!result.confidence && result.confidence_percentage && (
-                <Chip 
-                  mode="flat" 
-                  style={[styles.confidenceChip, { backgroundColor: '#4CAF50' }]}
-                  textStyle={{ color: '#fff', fontWeight: 'bold' }}
-                >
-                  {result.confidence_percentage}%
-                </Chip>
-              )}
+      {(result && !loading) ? (
+        <View style={styles.resultContainer} nativeID="inline-plant-results">
+          
+          <Text style={styles.sectionHeader}>Diagnosis Report</Text>
+
+          <Card style={[styles.modernCard, styles.diagnosisCard]}>
+            <View style={styles.diagnosisHeader}>
+              <View style={styles.diagnosisIconBox}>
+                <Text style={{ fontSize: 24 }}>{result.disease && !String(result.disease).toLowerCase().includes('healthy') ? '🦠' : '✅'}</Text>
+              </View>
+              <View style={styles.diagnosisTitleBox}>
+                <Text style={styles.diseaseLabel}>DETECTED CONDITION</Text>
+                <Text style={styles.diseaseName}>
+                  {result.disease ? String(result.disease) : (result.crop ? String(result.crop) : 'Analysis Complete')}
+                </Text>
+              </View>
             </View>
 
-            <Surface style={styles.diseaseCard}>
-              <Text style={styles.diseaseLabel}>Detected Condition:</Text>
-              <Text style={styles.diseaseName}>
-                {result.disease || result.crop || 'Analysis Complete'}
-              </Text>
-            </Surface>
-
-            {/* VISIBILITY DEBUG */}
-            <Surface style={{ padding: 6, marginTop: 6, backgroundColor: '#E8F5E9' }}>
-              <Text style={{ fontSize: 9, color: '#2E7D32' }}>
-                ✅ Rendered: {new Date().toLocaleTimeString()}
-                {'\n'}📍 Crop: {result.crop || 'N/A'}
-                {'\n'}🦠 Disease: {result.disease || 'N/A'}
-                {'\n'}📊 Conf: {result.confidence_percentage || result.confidence || '0%'}
-              </Text>
-            </Surface>
-
-            {(result.recommendations || result.recommendation) && (
-              <View style={styles.recommendationsSection}>
-                <Text style={styles.sectionTitle}>💡 Recommendations:</Text>
-                <Text style={styles.recommendationText}>
-                  {result.recommendations || result.recommendation}
+            <View style={styles.statsRow}>
+              <View style={styles.statBox}>
+                <Text style={styles.statLabel}>Confidence</Text>
+                <Text style={[styles.statValue, { color: getSeverityColor(Number(result.confidence)) }]}>
+                  {result.confidence ? `${Math.round(Number(result.confidence) * 100)}%` : (result.confidence_percentage ? `${result.confidence_percentage}%` : 'N/A')}
                 </Text>
               </View>
-            )}
-
-            {result.treatment && (
-              <View style={styles.treatmentSection}>
-                <Text style={styles.sectionTitle}>💊 Treatment:</Text>
-                <Text style={styles.treatmentText}>{result.treatment}</Text>
-              </View>
-            )}
-
-            {result.fertilizers && result.fertilizers.recommended && result.fertilizers.recommended.length > 0 && (
-              <View style={styles.fertilizersSection}>
-                <Text style={styles.sectionTitle}>🌱 Recommended Fertilizers:</Text>
-                {result.fertilizers.recommended.map((fert: any, index: number) => (
-                  <Text key={index} style={styles.fertilizerText}>
-                    • {typeof fert === 'string' ? fert : fert.name || JSON.stringify(fert)}
-                  </Text>
-                ))}
-              </View>
-            )}
-
-            {result.predictions && result.predictions.length > 0 && (
-              <View style={styles.predictionsSection}>
-                <Text style={styles.sectionTitle}>🎯 Top Predictions:</Text>
-                {result.predictions.slice(0, 3).map((pred: any, index: number) => (
-                  <Surface key={index} style={styles.predictionCard}>
-                    <Text style={styles.predictionName}>{pred.class_name || pred.class}</Text>
-                    <Text style={styles.predictionConfidence}>
-                      {Math.round((pred.confidence || 0) * 100)}%
-                    </Text>
-                  </Surface>
-                ))}
-              </View>
-            )}
-
-            {/* Debug: Show raw data if no structured data available */}
-            {!result.disease && !result.crop && !result.recommendation && !result.recommendations && (
-              <Surface style={styles.debugCard}>
-                <Text style={styles.debugTitle}>📋 Raw Response (Debug Mode):</Text>
-                <ScrollView horizontal style={{ maxHeight: 200 }}>
-                  <Text style={styles.debugText}>
-                    {JSON.stringify(result, null, 2)}
-                  </Text>
-                </ScrollView>
-                <Text style={styles.debugHint}>
-                  ⚠️ If you see this, the response structure may be unexpected. Check console logs.
+              <View style={styles.divider} />
+              <View style={styles.statBox}>
+                <Text style={styles.statLabel}>Crop Type</Text>
+                <Text style={[styles.statValue, { color: '#334155' }]} numberOfLines={1}>
+                  {result.crop ? String(result.crop) : 'Unknown'}
                 </Text>
-              </Surface>
-            )}
+              </View>
+            </View>
+          </Card>
 
-            <Surface style={styles.infoBox}>
-              <Text style={styles.infoText}>
-                ⚠️ This is an AI-powered estimate. Consult agricultural experts for critical decisions.
+          {(result.recommendations || result.recommendation) ? (
+            <Card style={[styles.modernCard, styles.lightCard]}>
+              <Text style={styles.cardSectionTitle}>💡 What to do next</Text>
+              <Text style={styles.cardBodyText}>
+                {result.recommendations ? renderTextSafely(result.recommendations) : renderTextSafely(result.recommendation)}
               </Text>
-            </Surface>
-          </Card.Content>
-        </Card>
-      )}
+            </Card>
+          ) : null}
 
-      {!image && !loading && !result && (
-        <Card style={styles.placeholderCard}>
-          <Card.Content>
-            <Text style={styles.placeholderText}>📸 No image selected</Text>
-            <Text style={styles.placeholderSubtext}>Choose an image from gallery or take a photo to get started</Text>
-          </Card.Content>
-        </Card>
-      )}
+          {result.treatment ? (
+            <Card style={[styles.modernCard, styles.treatmentCard]}>
+              <Text style={styles.cardSectionTitle}>💊 Treatment Protocol</Text>
+              <Text style={styles.cardBodyText}>{renderTextSafely(result.treatment)}</Text>
+            </Card>
+          ) : null}
 
-      <View style={{ height: 30 }} />
+          {(result.fertilizers && result.fertilizers.recommended && result.fertilizers.recommended.length > 0) ? (
+            <Card style={styles.modernCard}>
+              <Text style={styles.cardSectionTitle}>🌱 Suggested Fertilizers</Text>
+              <View style={styles.pillsContainer}>
+              {result.fertilizers.recommended.map((fert: any, index: number) => (
+                <Surface key={index} style={styles.pillBox} elevation={0}>
+                  <Text style={styles.pillText}>
+                    {typeof fert === 'string' ? fert : (fert.name ? String(fert.name) : 'Fertilizer')}
+                  </Text>
+                </Surface>
+              ))}
+              </View>
+            </Card>
+          ) : null}
+
+          <View style={styles.disclaimerBox}>
+            <Text style={styles.disclaimerText}>
+              Note: This is an AI-generated assessment. Please consult with a local agronomist for severe crop conditions.
+            </Text>
+          </View>
+        </View>
+      ) : null}
+
     </ScrollView>
     
-    {/* Snackbar for success/error messages - replaces window.alert() */}
     <Snackbar
       visible={snackbarVisible}
       onDismiss={() => setSnackbarVisible(false)}
       duration={4000}
-      action={{
-        label: 'OK',
-        onPress: () => setSnackbarVisible(false),
-      }}
       style={{ 
-        backgroundColor: snackbarMessage.includes('❌') ? '#F44336' : '#4CAF50',
-        marginBottom: Platform.OS === 'web' ? 20 : 0
+        backgroundColor: snackbarMessage.includes('❌') ? '#EF4444' : '#10B981',
+        borderRadius: 12,
+        marginBottom: Platform.OS === 'web' ? 24 : 16,
+        marginHorizontal: 16
       }}
     >
-      <Text style={{ color: '#fff', fontSize: 15, fontWeight: '500' }}>
+      <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>
         {snackbarMessage}
       </Text>
     </Snackbar>
@@ -501,50 +524,282 @@ export default function PlantAnalyzer(): JSX.Element {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F5F7FA' },
-  header: { padding: 24, margin: 16, borderRadius: 20, backgroundColor: '#fff', elevation: 2 },
-  title: { fontWeight: 'bold', color: '#1E293B', marginBottom: 8 },
-  subtitle: { fontSize: 14, color: '#64748B' },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: 16, marginVertical: 16 },
-  button: { flex: 1, marginHorizontal: 8 },
-  imageCard: { marginHorizontal: 16, marginBottom: 16, borderRadius: 16, overflow: 'hidden', elevation: 3 },
-  image: { width: '100%', height: 300, resizeMode: 'cover' },
-  loadingContainer: { alignItems: 'center', padding: 40 },
-  loadingText: { marginTop: 16, fontSize: 16, color: '#64748B', fontWeight: '600' },
-  loadingSubtext: { marginTop: 8, fontSize: 14, color: '#94A3B8' },
-  resultCard: { 
-    marginHorizontal: 16, 
-    marginBottom: 16, 
-    borderRadius: 16, 
-    backgroundColor: '#fff', 
-    elevation: 3,
-    zIndex: 999,
-    position: 'relative',
+  container: { 
+    flex: 1, 
+    backgroundColor: '#F8FAFC' 
   },
-  resultHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  resultTitle: { fontWeight: 'bold', color: '#1E293B' },
-  confidenceChip: { elevation: 2 },
-  diseaseCard: { backgroundColor: '#FFF3E0', padding: 16, borderRadius: 12, marginBottom: 16 },
-  diseaseLabel: { fontSize: 12, color: '#E65100', fontWeight: '600', marginBottom: 4, textTransform: 'uppercase' },
-  diseaseName: { fontSize: 20, fontWeight: 'bold', color: '#E65100' },
-  recommendationsSection: { marginBottom: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#1E293B', marginBottom: 8 },
-  recommendationText: { fontSize: 14, color: '#475569', lineHeight: 22 },
-  treatmentSection: { marginBottom: 16 },
-  treatmentText: { fontSize: 14, color: '#475569', lineHeight: 22 },
-  fertilizersSection: { marginBottom: 16 },
-  fertilizerText: { fontSize: 14, color: '#475569', lineHeight: 22, marginLeft: 8 },
-  predictionsSection: { marginBottom: 16 },
-  predictionCard: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, backgroundColor: '#F8FAFC', borderRadius: 8, marginBottom: 8 },
-  predictionName: { fontSize: 14, color: '#334155', fontWeight: '500' },
-  predictionConfidence: { fontSize: 14, color: '#4CAF50', fontWeight: 'bold' },
-  debugCard: { backgroundColor: '#FFF9E6', padding: 16, borderRadius: 12, marginTop: 16, marginBottom: 16 },
-  debugTitle: { fontSize: 14, color: '#92400E', marginBottom: 8, fontWeight: '600' },
-  debugText: { fontSize: 11, color: '#78350F', fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', lineHeight: 16 },
-  debugHint: { fontSize: 12, color: '#A16207', marginTop: 8, fontStyle: 'italic' },
-  infoBox: { backgroundColor: '#E3F2FD', padding: 12, borderRadius: 8, marginTop: 8, elevation: 0 },
-  infoText: { fontSize: 12, color: '#1565C0', textAlign: 'center' },
-  placeholderCard: { marginHorizontal: 16, marginTop: 40, borderRadius: 16, backgroundColor: '#FFF9E6' },
-  placeholderText: { fontSize: 18, fontWeight: 'bold', color: '#F59E0B', textAlign: 'center', marginBottom: 8 },
-  placeholderSubtext: { fontSize: 14, color: '#92400E', textAlign: 'center' },
+  header: { 
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: 24, 
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 24,
+    backgroundColor: '#fff',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 4,
+    marginBottom: 20
+  },
+  title: { 
+    fontSize: 26,
+    fontWeight: '800', 
+    color: '#0F172A', 
+    marginBottom: 4,
+    letterSpacing: -0.5
+  },
+  subtitle: { 
+    fontSize: 14, 
+    color: '#64748B',
+    fontWeight: '500'
+  },
+  headerIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 20,
+    backgroundColor: '#ECFDF5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  uploadSection: {
+    paddingHorizontal: 20,
+    marginTop: 10
+  },
+  dashedBox: {
+    borderWidth: 2,
+    borderColor: '#CBD5E1',
+    borderStyle: 'dashed',
+    borderRadius: 24,
+    padding: 32,
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9'
+  },
+  iconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2
+  },
+  uploadTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1E293B',
+    marginBottom: 8
+  },
+  uploadSubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 12
+  },
+  buttonRow: { 
+    flexDirection: 'row', 
+    width: '100%',
+    gap: 12
+  },
+  actionButton: { 
+    flex: 1,
+    borderRadius: 14,
+  },
+  galleryBtn: {
+    borderWidth: 0,
+  },
+  cameraBtn: {
+    borderWidth: 0,
+  },
+  modernCard: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    borderRadius: 24,
+    backgroundColor: '#fff',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    overflow: 'hidden'
+  },
+  previewImage: { 
+    width: '100%', 
+    height: 320, 
+    resizeMode: 'cover' 
+  },
+  imageOverlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  overlayBtn: {
+    borderRadius: 100,
+  },
+  imageActionRow: {
+    flexDirection: 'row',
+    gap: 8
+  },
+  analyzeContainer: {
+    padding: 20,
+    backgroundColor: '#fff'
+  },
+  analyzeBtn: {
+    borderRadius: 16,
+  },
+  analyzeBtnContent: {
+    paddingVertical: 6,
+    height: 54
+  },
+  loadingContainer: { 
+    alignItems: 'center', 
+    padding: 40,
+    marginTop: 20
+  },
+  loadingText: { 
+    marginTop: 20, 
+    fontSize: 18, 
+    color: '#0F172A', 
+    fontWeight: '700' 
+  },
+  loadingSubtext: { 
+    marginTop: 8, 
+    fontSize: 14, 
+    color: '#64748B' 
+  },
+  resultContainer: {
+    paddingTop: 10,
+    paddingBottom: 40
+  },
+  sectionHeader: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#334155',
+    marginHorizontal: 24,
+    marginBottom: 16,
+    marginTop: 8
+  },
+  diagnosisCard: {
+    padding: 20,
+    backgroundColor: '#fff'
+  },
+  diagnosisHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20
+  },
+  diagnosisIconBox: {
+    width: 48, height: 48,
+    borderRadius: 16,
+    backgroundColor: '#FEF3C7',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16
+  },
+  diagnosisTitleBox: {
+    flex: 1
+  },
+  diseaseLabel: { 
+    fontSize: 11, 
+    color: '#D97706', 
+    fontWeight: '700', 
+    letterSpacing: 1,
+    marginBottom: 4
+  },
+  diseaseName: { 
+    fontSize: 22, 
+    fontWeight: '800', 
+    color: '#92400E' 
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 16
+  },
+  statBox: {
+    flex: 1,
+  },
+  divider: {
+    width: 1,
+    height: 30,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 16
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '600',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  lightCard: {
+    padding: 20,
+    backgroundColor: '#F0FDF4'
+  },
+  treatmentCard: {
+    padding: 20,
+    backgroundColor: '#EFF6FF'
+  },
+  cardSectionTitle: { 
+    fontSize: 16, 
+    fontWeight: '700', 
+    color: '#0F172A', 
+    marginBottom: 12 
+  },
+  cardBodyText: { 
+    fontSize: 15, 
+    color: '#334155', 
+    lineHeight: 24 
+  },
+  pillsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    padding: 20,
+    paddingTop: 0
+  },
+  pillBox: {
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 100,
+    borderWidth: 1,
+    borderColor: '#A7F3D0'
+  },
+  pillText: {
+    color: '#059669',
+    fontWeight: '600',
+    fontSize: 14
+  },
+  disclaimerBox: {
+    marginHorizontal: 24,
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 16
+  },
+  disclaimerText: {
+    fontSize: 12,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 18
+  }
 });

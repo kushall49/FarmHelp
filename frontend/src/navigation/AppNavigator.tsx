@@ -63,6 +63,11 @@ import CreateListingScreen from '../screens/CreateListingScreen';
 import CreateJobRequestScreen from '../screens/CreateJobRequestScreen';
 import MyListingsScreen from '../screens/MyListingsScreen';
 import RateProviderScreen from '../screens/RateProviderScreen';
+import LiveMapScreen from '../screens/LiveMapScreen';
+import ProviderDutyScreen from '../screens/ProviderDutyScreen';
+
+// Import New Services Module
+import { ServiceNavigator, ServiceProvider } from '../screens/services';
 
 // Import Screens - Profile Tab
 import ProfileScreen from '../screens/Profile';
@@ -196,83 +201,11 @@ function CommunityStackNavigator() {
 // SERVICES STACK NAVIGATOR
 // ============================================================================
 
-function ServicesStackNavigator() {
+function ServicesTabWrapper() {
   return (
-    <ServicesStack.Navigator>
-      {/* Main Services Screen - No header (uses custom header) */}
-      <ServicesStack.Screen
-        name="ServicesHome"
-        component={ServicesHomeScreen}
-        options={{ headerShown: false }}
-      />
-      
-      {/* Service Feature Screens - With headers and back buttons */}
-      <ServicesStack.Screen
-        name="ServiceDetails"
-        component={ServiceDetailsScreen}
-        options={{
-          headerShown: true,
-          title: 'Service Details',
-          headerBackTitle: 'Services',
-          headerBackTitleVisible: false,
-        }}
-      />
-      
-      <ServicesStack.Screen
-        name="JobDetails"
-        component={JobDetailsScreen}
-        options={{
-          headerShown: true,
-          title: 'Job Details',
-          headerBackTitle: 'Services',
-          headerBackTitleVisible: false,
-        }}
-      />
-      
-      <ServicesStack.Screen
-        name="CreateListing"
-        component={CreateListingScreen}
-        options={{
-          headerShown: true,
-          title: 'Create Service Listing',
-          headerBackTitle: 'Services',
-          headerBackTitleVisible: false,
-        }}
-      />
-      
-      <ServicesStack.Screen
-        name="CreateJobRequest"
-        component={CreateJobRequestScreen}
-        options={{
-          headerShown: true,
-          title: 'Create Job Request',
-          headerBackTitle: 'Services',
-          headerBackTitleVisible: false,
-        }}
-      />
-      
-      <ServicesStack.Screen
-        name="MyListings"
-        component={MyListingsScreen}
-        options={{
-          headerShown: true,
-          title: 'My Listings',
-          headerBackTitle: 'Services',
-          headerBackTitleVisible: false,
-        }}
-      />
-      
-      <ServicesStack.Screen
-        name="RateProvider"
-        component={RateProviderScreen}
-        options={{
-          headerShown: true,
-          title: 'Rate Service Provider',
-          headerBackTitle: 'Back',
-          headerBackTitleVisible: false,
-        }}
-      />
-    </ServicesStack.Navigator>
+    <ServiceProvider>
+      <ServiceNavigator />
+    </ServiceProvider>
   );
 }
 
@@ -319,7 +252,7 @@ function MainTabNavigator() {
       />
       <Tab.Screen
         name="ServicesTab"
-        component={ServicesStackNavigator}
+        component={ServicesTabWrapper as any} // Using new encapsulated module
         options={{ tabBarLabel: 'Services' }}
       />
       <Tab.Screen
@@ -371,28 +304,8 @@ export function useAndroidBackHandler(
   navigationRef: React.RefObject<NavigationContainerRef<RootStackParamList>>
 ) {
   useEffect(() => {
-    if (Platform.OS !== 'android') {
-      return; // Only for Android
-    }
-
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
-      const navigation = navigationRef.current;
-
-      if (!navigation) {
-        return false; // Allow default (exit app)
-      }
-
-      // Check if we can go back in the navigation stack
-      if (navigation.canGoBack()) {
-        navigation.goBack();
-        return true; // Prevent default (we handled it)
-      }
-
-      // On root screen - allow app exit
-      return false; // Allow default (exit app)
-    });
-
-    return () => backHandler.remove();
+    // Disabled Native Mobile Libraries entirely to fix Web Renderer Crash
+    return;
   }, [navigationRef]);
 }
 

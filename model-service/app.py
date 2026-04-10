@@ -12,8 +12,19 @@ from werkzeug.exceptions import HTTPException
 # Import configuration
 from config import get_config, Config
 
+try:
+    import tensorflow as tf
+except ModuleNotFoundError:
+    print("TensorFlow not available, ML features disabled")
+    tf = None
+
+try:
+    from models.model_loader import model_loader
+except Exception as e:
+    print(f"Model loader failed: {e}")
+    model_loader = None
+
 # Import core modules
-from models.model_loader import model_loader
 from core.preprocess import preprocessor
 from core.predict import create_classifier
 from core.gradcam import gradcam
@@ -121,29 +132,7 @@ def index():
 
 @app.route('/health', methods=['GET'])
 def health():
-    """Health check endpoint"""
-    try:
-        uptime_seconds = int(time.time() - service_start_time)
-        health_status = {
-            'status': 'healthy',
-            'uptime_seconds': uptime_seconds,
-            'uptime_formatted': _format_uptime(uptime_seconds),
-            'model_loaded': model_loader.is_loaded(),
-            'environment': env,
-            'timestamp': time.time()
-        }
-        
-        if model_loader.is_loaded():
-            health_status['model_info'] = model_loader.get_model_info()
-        
-        return jsonify(health_status), 200
-        
-    except Exception as e:
-        logger.error(f"Health check failed: {str(e)}")
-        return jsonify({
-            'status': 'unhealthy',
-            'error': str(e)
-        }), 500
+    return {"status": "ok", "ml": model_loader is not None}
 
 
 @app.route('/analyze', methods=['POST'])

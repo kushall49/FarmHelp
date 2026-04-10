@@ -16,9 +16,27 @@ class SocketService {
     return this.socket;
   }
 
-  private ensureConnected() {
-    if (!this.socket) this.connect();
-    return this.socket;
+  private getSocket(): Socket {
+    // Ensure we always return a Socket instance (never null/undefined),
+    // otherwise emits can silently no-op.
+    const socket = this.socket || this.connect();
+    if (!socket) {
+      throw new Error('Socket not initialized');
+    }
+    this.socket = socket;
+    return socket;
+  }
+
+  private emit(event: string, payload?: any) {
+    const socket = this.getSocket();
+
+    // If connect hasn't completed yet, queue once.
+    if (!socket.connected) {
+      socket.once('connect', () => socket.emit(event, payload));
+      return;
+    }
+
+    socket.emit(event, payload);
   }
 
   disconnect() {
@@ -32,42 +50,42 @@ class SocketService {
   // EMIT: OPERATOR
   // ==========================================
   operatorGoOnline(operatorId: string, location: { coordinates: [number, number] }) {
-    this.ensureConnected()?.emit('operator:goOnline', { operatorId, location });
+    this.emit('operator:goOnline', { operatorId, location });
   }
 
   operatorGoOffline(operatorId: string) {
-    this.ensureConnected()?.emit('operator:goOffline', { operatorId });
+    this.emit('operator:goOffline', { operatorId });
   }
 
   operatorUpdateLocation(operatorId: string, location: { coordinates: [number, number] }, activeRequestId: string | null) {
-    this.ensureConnected()?.emit('operator:updateLocation', { operatorId, location, activeRequestId });
+    this.emit('operator:updateLocation', { operatorId, location, activeRequestId });
   }
 
   operatorAcceptRequest(requestId: string, operatorId: string) {
-    this.ensureConnected()?.emit('operator:acceptRequest', { requestId, operatorId });
+    this.emit('operator:acceptRequest', { requestId, operatorId });
   }
 
   operatorRejectRequest(requestId: string) {
-    this.ensureConnected()?.emit('operator:rejectRequest', { requestId });
+    this.emit('operator:rejectRequest', { requestId });
   }
 
   operatorVerifyOTP(requestId: string, enteredOtp: string) {
-    this.ensureConnected()?.emit('operator:verifyOTP', { requestId, enteredOtp });
+    this.emit('operator:verifyOTP', { requestId, enteredOtp });
   }
 
   operatorMarkComplete(requestId: string) {
-    this.ensureConnected()?.emit('operator:markComplete', { requestId });
+    this.emit('operator:markComplete', { requestId });
   }
 
   // ==========================================
   // EMIT: FARMER
   // ==========================================
   farmerRequestService(farmerId: string, equipmentType: string, coordinates: [number, number]) {
-    this.ensureConnected()?.emit('farmer:requestService', { farmerId, equipmentType, coordinates });
+    this.emit('farmer:requestService', { farmerId, equipmentType, coordinates });
   }
 
   farmerCancelRequest(requestId: string) {
-    this.ensureConnected()?.emit('farmer:cancelRequest', { requestId });
+    this.emit('farmer:cancelRequest', { requestId });
   }
 
   // ==========================================

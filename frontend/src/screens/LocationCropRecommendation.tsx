@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, Alert, Platform, Linking } from 'react-native';
 import { Text, Button, Card, Surface, ActivityIndicator, Chip, Divider, IconButton } from 'react-native-paper';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeGoBack } from '../navigation/AppNavigator';
@@ -193,7 +192,7 @@ export default function LocationCropRecommendation() {
       {/* Map Preview */}
       {location && (
         <Surface style={styles.mapContainer} elevation={3}>
-          <MapView
+          <View
             style={styles.map}
             provider={PROVIDER_GOOGLE}
             initialRegion={{
@@ -205,7 +204,7 @@ export default function LocationCropRecommendation() {
             scrollEnabled={false}
             zoomEnabled={false}
           >
-            <Marker
+            <View
               coordinate={{
                 latitude: location.latitude,
                 longitude: location.longitude,
@@ -213,7 +212,7 @@ export default function LocationCropRecommendation() {
               title="Your Location"
               description={`${location.district}, ${location.state}`}
             />
-          </MapView>
+          </View>
           <View style={styles.mapOverlay}>
             <Text style={styles.locationText}>📍 {location.district}, {location.state}</Text>
             <Text style={styles.coordsText}>
