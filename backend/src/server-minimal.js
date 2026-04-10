@@ -106,6 +106,10 @@ app.use('/api/jobs', jobRoutes);
 const userRoutes = require('./routes/userRoutes');
 app.use('/api/users', userRoutes);
 
+// Plant species identification (Pl@ntNet proxy, keeps API key server-side)
+const plantnetRoutes = require('./routes/plantnet');
+app.use('/api/plantnet', plantnetRoutes);
+
 // Plant analysis routes - Disease detection & ML integration
 const plantUploadRoutes = require('./routes/plant-upload');
 const plantRoutes = require('./routes/plant');

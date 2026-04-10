@@ -1,9 +1,4 @@
-import axios from 'axios';
-
-// Pl@ntNet API Configuration
-// User should set their API key in environment or AsyncStorage
-const PLANTNET_API_KEY = '2b10cb9WQRRM6k5E0ND8aKgpzu'; // Replace with actual key
-const PLANTNET_API_URL = 'https://my-api.plantnet.org/v2/identify/all';
+import { axiosInstance } from './api';
 
 export interface PlantNetResult {
   species: {
@@ -36,7 +31,8 @@ export interface PlantNetResponse {
 }
 
 /**
- * Identify plant species using Pl@ntNet API
+ * Identify plant species using server-side Pl@ntNet proxy.
+ * This keeps the Pl@ntNet API key off the client.
  * @param imageUri - Image file URI or base64 data
  * @param organs - Plant organs in image (leaf, flower, fruit, bark, habit, other)
  * @returns Plant identification results
@@ -57,21 +53,18 @@ export async function identifyPlant(
     const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
     
     // Append image and organs
-    formData.append('images', file);
+    formData.append('image', file);
     organs.forEach(organ => formData.append('organs', organ));
     
-    // Make API request
-    const result = await axios.post(
-      `${PLANTNET_API_URL}?api-key=${PLANTNET_API_KEY}`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      }
-    );
-    
-    return result.data;
+    const result = await axiosInstance.post('/plantnet/identify', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+
+    if (!result.data?.success) {
+      throw new Error(result.data?.error || 'Plant identification failed');
+    }
+
+    return result.data.data as PlantNetResponse;
   } catch (error: any) {
     console.error('[PLANTNET] API Error:', error);
     throw new Error(error.response?.data?.message || 'Plant identification failed');

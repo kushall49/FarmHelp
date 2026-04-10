@@ -8,6 +8,7 @@ import logging
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
+import requests
 
 # Import configuration
 from config import get_config, Config
@@ -120,7 +121,7 @@ def index():
         'service': 'FarmHelp Plant Disease Detection ML Service',
         'version': '1.0.0',
         'status': 'running',
-        'model_loaded': model_loader.is_loaded(),
+        'model_loaded': (model_loader.is_loaded() if model_loader is not None else False),
         'endpoints': {
             'POST /analyze': 'Analyze plant image for disease detection',
             'GET /health': 'Health check endpoint',
@@ -133,6 +134,21 @@ def index():
 @app.route('/health', methods=['GET'])
 def health():
     return {"status": "ok", "ml": model_loader is not None}
+
+def _plantnet_identify(file_storage):
+    api_key = os.getenv('PLANTNET_API_KEY')
+    api_url = os.getenv('PLANTNET_API_URL', 'https://my-api.plantnet.org/v2/identify/all')
+    if not api_key:
+        return None, "PLANTNET_API_KEY is not set"
+
+    files = {
+        'images': (file_storage.filename or 'plant.jpg', file_storage.stream, file_storage.mimetype or 'image/jpeg')
+    }
+    data = [('organs', 'leaf')]
+    resp = requests.post(f"{api_url}?api-key={api_key}", files=files, data=data, timeout=30)
+    if resp.status_code != 200:
+        return None, f"PlantNet error: status {resp.status_code}"
+    return resp.json(), None
 
 
 @app.route('/analyze', methods=['POST'])
@@ -174,11 +190,40 @@ def analyze():
         start_time = time.time()
         
         # PRODUCTION: Check if model is loaded
-        if not model_loader.is_loaded():
+        if model_loader is None or (not model_loader.is_loaded()):
+            # Fallback: Pl@ntNet species identification (API) if configured.
+            if 'file' in request.files:
+                plantnet_json, plantnet_err = _plantnet_identify(request.files['file'])
+                if plantnet_json and not plantnet_err:
+                    top = (plantnet_json.get('results') or [{}])[0]
+                    species = top.get('species') or {}
+                    common = (species.get('commonNames') or [])
+                    crop = (common[0] if common else (species.get('scientificNameWithoutAuthor') or 'Unknown'))
+                    score = float(top.get('score') or 0.0)
+                    confidence_pct = round(score * 100.0, 2)
+                    response = jsonify({
+                        'success': True,
+                        'source': 'plantnet',
+                        'crop': crop,
+                        'disease': 'Unknown (species identified)',
+                        'confidence': confidence_pct,
+                        'confidence_percentage': f"{confidence_pct:.2f}%",
+                        'predictions': [{
+                            'class_name': species.get('scientificNameWithoutAuthor') or crop,
+                            'confidence': score
+                        }],
+                        'recommendation': 'Species identified via Pl@ntNet. Disease model is not configured; enable a disease API or provide a trained model.',
+                        'recommendations': {'summary': 'Species identified; disease detection not configured.'},
+                        'processing_time_ms': 0
+                    })
+                    response.headers['Content-Type'] = 'application/json'
+                    response.status_code = 200
+                    return response
+
             logger.error('[FLASK] ❌ Model not loaded')
             response = jsonify({
                 'success': False,
-                'error': 'ML model not loaded. Please check server logs.',
+                'error': 'ML model not loaded and API fallback not configured. Set PLANTNET_API_KEY or provide a model file.',
                 'error_code': 'MODEL_NOT_LOADED',
                 'layer': 'ml_service',
                 'timestamp': int(time.time() * 1000)
@@ -519,10 +564,28 @@ def initialize_model():
     logger.info("=" * 60)
     
     try:
-        # Load TensorFlow model
-        model_path = Config.MODELS_DIR / Config.MODEL_PATH.split('/')[-1]
+        # Resolve model path robustly. In cloud deployments the repo may not include large
+        # artifacts (e.g. an untracked .h5), so we try a small set of known filenames.
+        configured_name = os.path.basename(str(Config.MODEL_PATH))
+
+        candidates = [
+            Config.MODELS_DIR / configured_name,
+            Config.MODELS_DIR / 'plant_disease_model.keras',
+            Config.MODELS_DIR / 'plant_disease_model.h5',
+            Config.MODELS_DIR / 'best_model.keras',
+            Config.MODELS_DIR / 'plant_disease_model.tflite',
+        ]
+
+        model_path = next((p for p in candidates if p.exists()), candidates[0])
+        if not model_path.exists():
+            logger.error(f"Model file not found: {model_path}")
+            logger.warning("⚠️  Service will start but /analyze endpoint will return 503")
+            logger.warning("⚠️  Expected one of:")
+            for p in candidates:
+                logger.warning(f"     {p}")
+            return False
+
         logger.info(f"Loading model from: {model_path}")
-        
         success = model_loader.load_model(str(model_path), model_type=Config.MODEL_TYPE)
         
         if success:
