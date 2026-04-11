@@ -249,15 +249,28 @@ app.get('/api/crops', async (req, res) => {
       .map(c => `${c.name}: ${c.score}`);
     console.log(`[CROP RECOMMENDATION] Top 3 scores: ${topScores.join(', ')}`);
 
-    // Sort by score (highest first) and filter scores > 20 (lowered from 30)
-    const recommendations = scoredCrops
-      .filter(crop => crop.score > 20)
+    // Prefer crops above threshold; if none (strict combos e.g. clay + summer), return best-effort top matches
+    const MIN_SCORE = 8;
+    let recommendations = scoredCrops
+      .filter((crop) => crop.score > MIN_SCORE)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 10) // Top 10 recommendations
+      .slice(0, 10)
       .map((crop, index) => ({
         ...crop,
-        rank: index + 1
+        rank: index + 1,
       }));
+
+    if (recommendations.length === 0) {
+      recommendations = [...scoredCrops]
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 8)
+        .map((crop, index) => ({
+          ...crop,
+          rank: index + 1,
+          bestEffort: true,
+        }));
+      console.log('[CROP RECOMMENDATION] No crops above threshold; returning best-effort top matches');
+    }
 
     console.log(`[CROP RECOMMENDATION] Found ${recommendations.length} suitable crops`);
 

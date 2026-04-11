@@ -21,6 +21,65 @@ const FLASK_ML_BASE_URL = resolveFlaskMlBaseUrl();
 // We'll use a conversational model that's more reliable
 const CHAT_MODEL = 'tiiuae/falcon-7b-instruct';
 
+/**
+ * When TensorFlow model is missing on the ML service (503), still return useful analysis via Pl@ntNet (same env as /api/plantnet).
+ */
+async function tryPlantNetAnalyze(buffer, mimeType) {
+  const apiKey = process.env.PLANTNET_API_KEY;
+  if (!apiKey) return null;
+
+  const baseUrl = (process.env.PLANTNET_API_URL || 'https://my-api.plantnet.org/v2/identify/all').replace(/\/+$/, '');
+  const formData = new FormData();
+  const ext = (mimeType && mimeType.split('/')[1]) || 'jpg';
+  formData.append('images', buffer, {
+    filename: `plant.${ext}`,
+    contentType: mimeType || 'image/jpeg',
+  });
+  formData.append('organs', 'leaf');
+
+  const url = `${baseUrl}?api-key=${encodeURIComponent(apiKey)}`;
+  const response = await axios.post(url, formData, {
+    headers: { ...formData.getHeaders() },
+    timeout: 45000,
+    maxContentLength: Infinity,
+    maxBodyLength: Infinity,
+  });
+
+  const data = response.data || {};
+  const results = Array.isArray(data.results) ? data.results : [];
+  if (!results.length) return null;
+
+  const top = results[0];
+  const species = top.species || {};
+  const cropName =
+    (species.commonNames && species.commonNames[0]) ||
+    species.scientificNameWithoutAuthor ||
+    'Unknown plant';
+  const rawScore = typeof top.score === 'number' ? top.score : 0.15;
+  const confidence = Math.min(0.95, Math.max(0.08, rawScore > 1 ? rawScore / 100 : rawScore));
+
+  const predictions = results.slice(0, 5).map((r, idx) => ({
+    class_name: r.species?.scientificNameWithoutAuthor || `Candidate ${idx + 1}`,
+    confidence: typeof r.score === 'number' ? r.score : 0,
+  }));
+
+  return {
+    success: true,
+    crop: cropName,
+    disease:
+      'Disease not classified (ML weights missing on server). Result is species-level identification from Pl@ntNet — confirm in the field.',
+    confidence,
+    confidence_percentage: `${(confidence * 100).toFixed(1)}%`,
+    predictions,
+    recommendation: `Pl@ntNet top match: **${cropName}** (*${species.scientificNameWithoutAuthor || 'unknown species'}*). This is not a substitute for a trained disease model; check leaves with local extension if symptoms persist.`,
+    recommendations: { summary: 'Species identification (Pl@ntNet fallback).' },
+    fertilizers: [],
+    gradcam: null,
+    processing_time_ms: 0,
+    source: 'plantnet_fallback',
+  };
+}
+
 const AIService = {
   /**
    * Analyze plant image using Flask ML service
@@ -167,15 +226,26 @@ const AIService = {
       }
     }
     
-    // All retries failed: return explicit failure instead of a fake prediction
+    // All retries failed — try Pl@ntNet so production works without a local .h5/.keras on the ML service
     console.error('[AI-SERVICE] ❌ All retry attempts exhausted');
     console.error('[AI-SERVICE] Final error:', lastError?.message);
-    
+
+    try {
+      const pn = await tryPlantNetAnalyze(buffer, mimeType);
+      if (pn && pn.success) {
+        console.log('[AI-SERVICE] ✅ Using Pl@ntNet fallback after ML service failure');
+        return pn;
+      }
+    } catch (pnErr) {
+      console.error('[AI-SERVICE] Pl@ntNet fallback failed:', pnErr.message);
+    }
+
     return {
       success: false,
       fallback: true,
       fallback_reason: lastError?.message || 'ML service unavailable',
-      error: 'ML service unavailable. Please start model service and retry.',
+      error:
+        'ML model is not available on the ML service and Pl@ntNet fallback failed. Set PLANTNET_API_KEY on the Node backend or deploy plant_disease_model to the ML service.',
       timestamp: Date.now(),
       crop: null,
       disease: null,
@@ -184,7 +254,7 @@ const AIService = {
       predictions: [],
       recommendation: null,
       recommendations: {},
-      fertilizers: []
+      fertilizers: [],
     };
   },
 
