@@ -186,22 +186,27 @@ app.get('/api/crops', async (req, res) => {
     if (!soil && !season && !temp) {
       const Crop = mongoose.model('Crop');
       const allCrops = await Crop.find({});
-      return res.json({ success: true, results: allCrops });
+      const list = allCrops.length ? allCrops : require('./data/fallbackCrops');
+      if (!allCrops.length) {
+        console.warn('[CROP RECOMMENDATION] Mongo has no crops; returning bundled catalog');
+      }
+      return res.json({
+        success: true,
+        results: list,
+        fromFallbackCatalog: !allCrops.length,
+      });
     }
 
     // Import scoring utility
     const { scoreCrop, getCurrentSeason } = require('./utils/cropScoring');
     const Crop = mongoose.model('Crop');
 
-    // Get all crops from database
-    const allCrops = await Crop.find({});
-
-    if (allCrops.length === 0) {
-      return res.json({ 
-        success: true, 
-        message: 'No crops found in database. Please run the seed script.',
-        results: [] 
-      });
+    // Get all crops from database (bundled fallback if collection empty — common on fresh Render/Atlas)
+    const dbCrops = await Crop.find({});
+    const allCrops = dbCrops.length ? dbCrops : require('./data/fallbackCrops');
+    const fromFallbackCatalog = !dbCrops.length;
+    if (fromFallbackCatalog) {
+      console.warn('[CROP RECOMMENDATION] Mongo has no Crop documents; scoring bundled fallback catalog');
     }
 
     // Parse temperature
@@ -274,14 +279,15 @@ app.get('/api/crops', async (req, res) => {
 
     console.log(`[CROP RECOMMENDATION] Found ${recommendations.length} suitable crops`);
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       results: recommendations,
+      fromFallbackCatalog,
       conditions: {
         soil: soilType,
         season: currentSeason,
-        temperature: temperature
-      }
+        temperature: temperature,
+      },
     });
 
   } catch (error) {

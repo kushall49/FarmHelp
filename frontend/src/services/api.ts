@@ -3,7 +3,8 @@ import { API_BASE_URL } from '../config/serviceConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
-export const axiosInstance = axios.create({ baseURL: API_BASE_URL, timeout: 10000 });
+/** Default 60s — Render free tier cold start + ML can exceed 10s (was causing plant analyzer timeouts). */
+export const axiosInstance = axios.create({ baseURL: API_BASE_URL, timeout: 60000 });
 
 // Add auth token to requests
 axiosInstance.interceptors.request.use(async (config) => {
@@ -55,8 +56,12 @@ axiosInstance.interceptors.response.use(
 export default {
   signup: (data: any) => axiosInstance.post('/auth/signup', data),
   login: (data: any) => axiosInstance.post('/auth/login', data),
-  uploadPlant: (formData: any) => axiosInstance.post('/plant/upload-plant', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-  getCrops: (params: any) => axiosInstance.get('/crops', { params }),
+  uploadPlant: (formData: any) =>
+    axiosInstance.post('/plant/upload-plant', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+    }),
+  getCrops: (params: any) => axiosInstance.get('/crops', { params, timeout: 60000 }),
   getLocationBasedCrops: (params: { lat: number; long: number }) => axiosInstance.get('/crops/location', { params }),
   chatbot: (message: string) =>
     axiosInstance.post('/chatbot', { message }, { timeout: 120000 }),
