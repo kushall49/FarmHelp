@@ -63,8 +63,8 @@ function corsOriginDelegate(origin, callback) {
 app.use(cors({
   origin: corsOriginDelegate,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
 }));
 
 // 2. JSON Body Parser - CRITICAL: Must be placed BEFORE route definitions!
@@ -90,7 +90,25 @@ app.use((req, res, next) => {
 // DATABASE CONNECTION
 // ============================================
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://1ms23cs094_db_user:AEQZush8GtcXuvfH@cluster0.ug766o7.mongodb.net/farmmate';
+function pickMongoUri() {
+  const fallback = 'mongodb+srv://1ms23cs094_db_user:AEQZush8GtcXuvfH@cluster0.ug766o7.mongodb.net/farmmate';
+  const a = (process.env.MONGODB_URI || '').trim();
+  const b = (process.env.MONGO_URI || '').trim();
+  const isLocalhost = (u) =>
+    !u ||
+    /127\.0\.0\.1/.test(u) ||
+    /^mongodb:\/\/localhost/i.test(u) ||
+    /^mongodb:\/\/127/i.test(u);
+  if (process.env.NODE_ENV === 'production') {
+    if (a && !isLocalhost(a)) return a;
+    if (b && !isLocalhost(b)) return b;
+    if (a && isLocalhost(a)) console.warn('[CONFIG] Ignoring localhost MONGODB_URI in production; using fallback Atlas URI');
+    if (b && isLocalhost(b)) console.warn('[CONFIG] Ignoring localhost MONGO_URI in production');
+    return fallback;
+  }
+  return a || b || fallback;
+}
+const MONGODB_URI = pickMongoUri();
 
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,

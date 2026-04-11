@@ -7,7 +7,9 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeGoBack } from '../navigation/AppNavigator';
 import { sanitizeImageUri, getSafeAvatarUrl } from '../utils/uriValidation';
 
-const API_URL = 'http://localhost:4000';
+import { API_ORIGIN } from '../config/serviceConfig';
+
+const API_URL = API_ORIGIN;
 
 export default function PostDetailScreen() {
   // ✅ NAVIGATION FIX: Use safe navigation with deep link fallback

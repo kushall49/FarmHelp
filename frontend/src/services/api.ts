@@ -58,7 +58,8 @@ export default {
   uploadPlant: (formData: any) => axiosInstance.post('/plant/upload-plant', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getCrops: (params: any) => axiosInstance.get('/crops', { params }),
   getLocationBasedCrops: (params: { lat: number; long: number }) => axiosInstance.get('/crops/location', { params }),
-  chatbot: (message: string) => axiosInstance.post('/chatbot', { message }),
+  chatbot: (message: string) =>
+    axiosInstance.post('/chatbot', { message }, { timeout: 120000 }),
   
   // Services Marketplace APIs
   // Service Listings

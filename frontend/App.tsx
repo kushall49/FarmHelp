@@ -18,7 +18,6 @@ import AppNavigator, { useAndroidBackHandler } from './src/navigation/AppNavigat
 import type { RootStackParamList } from './src/navigation/navigationTypes';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { LanguageProvider } from './src/context/LanguageContext';
-import { SocketProvider } from './src/context/SocketContext';
 
 export default function App() {
   // Reference to navigation for Android back button handler
@@ -31,11 +30,9 @@ export default function App() {
     <LanguageProvider>
       <ThemeProvider>
         <PaperProvider>
-          <SocketProvider>
-            <NavigationContainer ref={navigationRef}>
-              <AppNavigator />
-            </NavigationContainer>
-          </SocketProvider>
+          <NavigationContainer ref={navigationRef}>
+            <AppNavigator />
+          </NavigationContainer>
         </PaperProvider>
       </ThemeProvider>
     </LanguageProvider>

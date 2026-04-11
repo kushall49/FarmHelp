@@ -3,7 +3,20 @@ const FormData = require('form-data');
 
 // API Configuration
 const HUGGINGFACE_API_KEY = process.env.HUGGINGFACE_API_KEY || '';
-const FLASK_ML_SERVICE_URL = process.env.FLASK_ML_SERVICE_URL || 'http://127.0.0.1:5000';
+
+/** Base URL for Flask ML (no trailing /analyze). Accepts FLASK_ML_SERVICE_URL, FLASK_SERVICE_URL, or MODEL_SERVICE_URL. */
+function resolveFlaskMlBaseUrl() {
+  const candidates = [
+    process.env.FLASK_ML_SERVICE_URL,
+    process.env.FLASK_SERVICE_URL,
+    process.env.MODEL_SERVICE_URL,
+  ].filter(Boolean);
+  let raw = String(candidates[0] || 'http://127.0.0.1:5000').trim().replace(/\/+$/, '');
+  if (/\/analyze$/i.test(raw)) raw = raw.replace(/\/analyze$/i, '');
+  return raw;
+}
+
+const FLASK_ML_BASE_URL = resolveFlaskMlBaseUrl();
 
 // We'll use a conversational model that's more reliable
 const CHAT_MODEL = 'tiiuae/falcon-7b-instruct';
@@ -51,13 +64,14 @@ const AIService = {
         formData.append('return_gradcam', 'true');
         formData.append('top_k', '3');
 
-        console.log(`[AI-SERVICE] Calling Flask ML service at ${FLASK_ML_SERVICE_URL}/analyze...`);
+        const analyzeUrl = `${FLASK_ML_BASE_URL}/analyze`;
+        console.log(`[AI-SERVICE] Calling Flask ML service at ${analyzeUrl}...`);
         console.log('[AI-SERVICE] Request timeout: 30s');
         
         const requestStartTime = Date.now();
         
         // Call Flask ML service
-        const response = await axios.post(`${FLASK_ML_SERVICE_URL}/analyze`, formData, {
+        const response = await axios.post(analyzeUrl, formData, {
           headers: {
             ...formData.getHeaders()
           },

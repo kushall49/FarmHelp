@@ -15,9 +15,6 @@
  *     │   ├── CreatePost (with header + back)
  *     │   ├── PostDetail (with header + back)
  *     │   └── UserProfile (with header + back)
- *     ├── ServicesTab (Stack.Navigator)
- *     │   ├── ServicesHome
- *     │   └── ... (all service screens with headers)
  *     └── ProfileTab (Profile screen)
  */
 
@@ -34,7 +31,6 @@ import type {
   MainTabParamList,
   HomeStackParamList,
   CommunityStackParamList,
-  ServicesStackParamList,
 } from './navigationTypes';
 
 // Import Screens - Auth
@@ -55,20 +51,6 @@ import CreatePostScreen from '../screens/CreatePostScreen';
 import PostDetailScreen from '../screens/PostDetailScreen';
 import UserProfileScreen from '../screens/UserProfileScreen';
 
-// Import Screens - Services Tab
-import ServicesHomeScreen from '../screens/ServicesHomeScreen';
-import ServiceDetailsScreen from '../screens/ServiceDetailsScreen';
-import JobDetailsScreen from '../screens/JobDetailsScreen';
-import CreateListingScreen from '../screens/CreateListingScreen';
-import CreateJobRequestScreen from '../screens/CreateJobRequestScreen';
-import MyListingsScreen from '../screens/MyListingsScreen';
-import RateProviderScreen from '../screens/RateProviderScreen';
-import LiveMapScreen from '../screens/LiveMapScreen';
-import ProviderDutyScreen from '../screens/ProviderDutyScreen';
-
-// Import New Services Module
-import { ServiceNavigator, ServiceProvider } from '../screens/services';
-
 // Import Screens - Profile Tab
 import ProfileScreen from '../screens/Profile';
 
@@ -80,7 +62,6 @@ const RootStack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
 const CommunityStack = createNativeStackNavigator<CommunityStackParamList>();
-const ServicesStack = createNativeStackNavigator<ServicesStackParamList>();
 
 // ============================================================================
 // HOME STACK NAVIGATOR
@@ -197,19 +178,6 @@ function CommunityStackNavigator() {
   );
 }
 
-// ============================================================================
-// SERVICES STACK NAVIGATOR
-// ============================================================================
-
-function ServicesTabWrapper() {
-  return (
-    <ServiceProvider>
-      <ServiceNavigator />
-    </ServiceProvider>
-  );
-}
-
-// ============================================================================
 // MAIN TAB NAVIGATOR
 // ============================================================================
 
@@ -224,8 +192,6 @@ function MainTabNavigator() {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'CommunityTab') {
             iconName = focused ? 'people' : 'people-outline';
-          } else if (route.name === 'ServicesTab') {
-            iconName = focused ? 'briefcase' : 'briefcase-outline';
           } else if (route.name === 'ProfileTab') {
             iconName = focused ? 'person' : 'person-outline';
           } else {
@@ -249,11 +215,6 @@ function MainTabNavigator() {
         name="CommunityTab"
         component={CommunityStackNavigator}
         options={{ tabBarLabel: 'Community' }}
-      />
-      <Tab.Screen
-        name="ServicesTab"
-        component={ServicesTabWrapper as any} // Using new encapsulated module
-        options={{ tabBarLabel: 'Services' }}
       />
       <Tab.Screen
         name="ProfileTab"

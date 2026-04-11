@@ -9,7 +9,9 @@ import TopNavigation from '../components/TopNavigation';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 
-const API_URL = 'http://localhost:4000';
+import { API_ORIGIN } from '../config/serviceConfig';
+
+const API_URL = API_ORIGIN;
 
 export default function CommunityScreen() {
   const [posts, setPosts] = useState([]);

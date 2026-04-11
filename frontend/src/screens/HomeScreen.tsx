@@ -18,6 +18,7 @@ export default function HomeScreen({ navigation }: any) {
   const [username, setUsername] = useState('Guest');
   const [weather, setWeather] = useState<any>(null);
   const [weatherLoading, setWeatherLoading] = useState(true);
+  const [hoveredFeatureIndex, setHoveredFeatureIndex] = useState<number | null>(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const dynamicStyles = {
@@ -214,8 +215,14 @@ export default function HomeScreen({ navigation }: any) {
               <TouchableOpacity
                 key={index}
                 activeOpacity={0.8}
+                onHoverIn={() => setHoveredFeatureIndex(index)}
+                onHoverOut={() => setHoveredFeatureIndex(null)}
                 onPress={() => navigation.navigate(feature.screen)}
-                style={[styles.featureCard, { backgroundColor: isDarkMode ? '#1E1E1E' : '#fff' }]}
+                style={[
+                  styles.featureCard,
+                  { backgroundColor: isDarkMode ? '#1E1E1E' : '#fff' },
+                  hoveredFeatureIndex === index && styles.featureCardHover,
+                ]}
               >
                 <View style={[styles.featureIconBox, { backgroundColor: feature.color + '15' }]}>
                   <Icon name={feature.iconName} size={32} color={feature.color} />
@@ -223,7 +230,15 @@ export default function HomeScreen({ navigation }: any) {
                 <Text style={[styles.featureTitle, { color: isDarkMode ? '#FFFFFF' : '#1E293B' }]}>{feature.title}</Text>
                 <Text style={[styles.featureDescription, { color: isDarkMode ? '#A0A0A0' : '#64748B' }]}>{feature.description}</Text>
                 <View style={styles.featureActionRow}>
-                  <Text style={[styles.featureActionText, { color: feature.color }]}>{t('tryNow')}</Text>
+                  <Text
+                    style={[
+                      styles.featureActionText,
+                      { color: feature.color },
+                      hoveredFeatureIndex === index && styles.featureActionTextHover
+                    ]}
+                  >
+                    {t('tryNow')}
+                  </Text>
                   <Icon name="arrow-right" size={16} color={feature.color} />
                 </View>
               </TouchableOpacity>
@@ -483,6 +498,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 32,
     elevation: 4,
+    transitionDuration: '180ms',
+  } as any,
+  featureCardHover: {
+    transform: [{ translateY: -6 }, { scale: 1.01 }],
+    shadowOpacity: 0.14,
+    shadowRadius: 38,
+    elevation: 10,
   },
   featureIconBox: {
     width: 68,
@@ -515,6 +537,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     marginRight: 6,
+    transitionDuration: '180ms',
+  } as any,
+  featureActionTextHover: {
+    textDecorationLine: 'underline',
   },
   aboutSection: {
     marginTop: 64,

@@ -7,7 +7,9 @@ import * as ImagePicker from 'expo-image-picker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useSafeGoBack } from '../navigation/AppNavigator';
 
-const API_URL = 'http://localhost:4000';
+import { API_ORIGIN } from '../config/serviceConfig';
+
+const API_URL = API_ORIGIN;
 
 export default function CreatePostScreen() {
   // ✅ NAVIGATION FIX: Use safe navigation with deep link fallback

@@ -31,7 +31,6 @@ export type MainTabParamList = {
   HomeTab: NavigatorScreenParams<HomeStackParamList> | undefined;
   CommunityTab: NavigatorScreenParams<CommunityStackParamList> | undefined;
   ProfileTab: undefined;
-  ServicesTab: NavigatorScreenParams<ServicesStackParamList> | undefined;
 };
 
 // ============================================================================
@@ -56,21 +55,6 @@ export type CommunityStackParamList = {
   UserProfile: { userId: string };
 };
 
-// ============================================================================
-// SERVICES STACK - Service marketplace + job requests
-// ============================================================================
-
-export type ServicesStackParamList = {
-  ServicesHome: undefined;
-  ServiceDetails: { serviceId: string };
-  JobDetails: { jobId: string };
-  CreateListing: undefined;
-  CreateJobRequest: undefined;
-  MyListings: undefined;
-  RateProvider: { serviceId: string; providerId: string };
-};
-
-// ============================================================================
 // NAVIGATION PROP TYPES - For components
 // ============================================================================
 
@@ -95,15 +79,6 @@ export type CommunityStackNavigationProp = CompositeNavigationProp<
   >
 >;
 
-// Services Stack Navigation Props
-export type ServicesStackNavigationProp = CompositeNavigationProp<
-  NativeStackNavigationProp<ServicesStackParamList>,
-  CompositeNavigationProp<
-    BottomTabNavigationProp<MainTabParamList>,
-    NativeStackNavigationProp<RootStackParamList>
-  >
->;
-
 // Profile Tab Navigation Props
 export type ProfileTabNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList>,
@@ -118,9 +93,6 @@ import type { RouteProp } from '@react-navigation/native';
 
 export type PostDetailRouteProp = RouteProp<CommunityStackParamList, 'PostDetail'>;
 export type UserProfileRouteProp = RouteProp<CommunityStackParamList, 'UserProfile'>;
-export type ServiceDetailsRouteProp = RouteProp<ServicesStackParamList, 'ServiceDetails'>;
-export type JobDetailsRouteProp = RouteProp<ServicesStackParamList, 'JobDetails'>;
-export type RateProviderRouteProp = RouteProp<ServicesStackParamList, 'RateProvider'>;
 
 // ============================================================================
 // HELPER TYPE FOR DEEP LINKING

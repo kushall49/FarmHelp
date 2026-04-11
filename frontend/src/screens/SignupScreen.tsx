@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -8,12 +8,16 @@ import {
   ImageBackground, 
   Image, 
   ActivityIndicator,
+  Platform,
   useWindowDimensions 
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth } from '../services/firebase';
+import { API_ORIGIN } from '../config/serviceConfig';
 
-const API_URL = 'http://localhost:4000';
+const API_URL = API_ORIGIN;
 
 export default function SignupScreen({ navigation }: any) {
   const { width } = useWindowDimensions();
@@ -26,6 +30,65 @@ export default function SignupScreen({ navigation }: any) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
+
+  function formatAuthError(raw: any) {
+    const message = String(raw?.message || raw || '').toLowerCase();
+
+    if (message.includes('route not found') || message.includes('404')) {
+      return 'Google signup endpoint not found. Please restart backend and ensure /api/auth/google is available.';
+    }
+    if (message.includes('auth/configuration-not-found')) {
+      return 'Google signup is not enabled in Firebase Authentication. Enable Google provider in Firebase Console.';
+    }
+    if (message.includes('popup_closed_by_user')) {
+      return 'Google popup was closed before sign-up completed.';
+    }
+    if (message.includes('network') || message.includes('failed to fetch')) {
+      return 'Network error. Check that frontend and backend are running on localhost.';
+    }
+
+    return raw?.message || 'Google signup failed';
+  }
+
+  async function onGoogleSignup() {
+    try {
+      setLoading(true);
+      setError('');
+
+      if (Platform.OS !== 'web') {
+        throw new Error('Google signup is currently enabled on web only.');
+      }
+      if (!auth) {
+        throw new Error('Google signup is not configured. Add Firebase keys in frontend/src/config/firebase.ts');
+      }
+
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const email = result.user.email;
+      if (!email) throw new Error('Google account did not return an email.');
+
+      const response = await fetch(`${API_URL}/api/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          displayName: result.user.displayName || email.split('@')[0],
+          uid: result.user.uid
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || data.error || 'Google signup failed');
+
+      await AsyncStorage.setItem('token', data.token);
+      await AsyncStorage.setItem('username', data.user.username || data.user.displayName || 'User');
+      await AsyncStorage.setItem('email', data.user.email);
+      navigation.replace('MainTabs');
+    } catch (err: any) {
+      setError(formatAuthError(err));
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function onSignup() {
     try {
@@ -85,8 +148,7 @@ export default function SignupScreen({ navigation }: any) {
             <Text style={styles.title}>Join FarmHelp</Text>
             <Text style={styles.subtitle}>Create an account to continue</Text>
 
-            {/* Google Sign In Button */}
-            <TouchableOpacity style={styles.googleBtn}>
+            <TouchableOpacity style={styles.googleBtn} onPress={onGoogleSignup} disabled={loading}>
               <Icon name="google" size={20} color="#DB4437" />
               <Text style={styles.googleText}>Sign up with Google</Text>
             </TouchableOpacity>

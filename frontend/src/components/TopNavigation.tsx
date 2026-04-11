@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -8,7 +8,7 @@ import { useLanguage } from '../context/LanguageContext';
 const { width } = Dimensions.get('window');
 
 interface TopNavigationProps {
-  activeTab?: 'Home' | 'Community' | 'Services' | 'Profile';
+  activeTab?: 'Home' | 'Community' | 'Profile';
 }
 
 export default function TopNavigation({ activeTab = 'Home' }: TopNavigationProps) {
@@ -62,13 +62,6 @@ export default function TopNavigation({ activeTab = 'Home' }: TopNavigationProps
           >
             <Icon name="account-group-outline" size={24} color={activeTab === 'Community' ? "#10B981" : "#6B7280"} style={styles.navIcon} />
             <Text style={[styles.navItem, activeTab === 'Community' && styles.navTextActive]}>{t('community')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.navItemContainer, activeTab === 'Services' && styles.navItemContainerActive]}
-            onPress={() => navigation.navigate('ServicesTab')}
-          >
-            <Icon name="briefcase-outline" size={24} color={activeTab === 'Services' ? "#10B981" : "#6B7280"} style={styles.navIcon} />
-            <Text style={[styles.navItem, activeTab === 'Services' && styles.navTextActive]}>{t('services')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.navItemContainer, activeTab === 'Profile' && styles.navItemContainerActive]}
