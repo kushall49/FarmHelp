@@ -37,7 +37,13 @@ class ModelLoader:
             bool: True if loaded successfully
         """
         try:
+            model_type = (model_type or 'h5').lower()
+
             if self._model is not None and model_type == 'h5':
+                logger.info("Model already loaded in cache")
+                return True
+
+            if self._model is not None and model_type == 'keras':
                 logger.info("Model already loaded in cache")
                 return True
             
@@ -49,10 +55,22 @@ class ModelLoader:
             if not model_path.exists():
                 logger.error(f"Model file not found: {model_path}")
                 return False
+
+            # Allow model_type=auto to infer from extension
+            if model_type == 'auto':
+                suffix = model_path.suffix.lower()
+                if suffix == '.tflite':
+                    model_type = 'tflite'
+                elif suffix == '.keras':
+                    model_type = 'keras'
+                elif suffix in {'.h5', '.hdf5'}:
+                    model_type = 'h5'
+                else:
+                    model_type = 'h5'
             
             logger.info(f"Loading {model_type.upper()} model from {model_path}...")
             
-            if model_type == 'h5':
+            if model_type in {'h5', 'keras'}:
                 self._model = tf.keras.models.load_model(
                     str(model_path),
                     compile=False  # Faster loading
@@ -60,7 +78,7 @@ class ModelLoader:
                 
                 # Store model metadata
                 self._model_info = {
-                    'type': 'h5',
+                    'type': model_type,
                     'path': str(model_path),
                     'input_shape': self._model.input_shape,
                     'output_shape': self._model.output_shape,
@@ -131,7 +149,7 @@ class ModelLoader:
             Prediction probabilities array
         """
         try:
-            if self._model_info.get('type') == 'h5':
+            if self._model_info.get('type') in {'h5', 'keras'}:
                 if self._model is None:
                     raise RuntimeError("Model not loaded")
                 

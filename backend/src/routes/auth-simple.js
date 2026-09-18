@@ -14,6 +14,11 @@ if (!process.env.JWT_SECRET) {
   console.warn('JWT_SECRET not set, using default for dev');
 }
 
+function buildUniqueUsername(email) {
+  const prefix = (email || 'user').split('@')[0].replace(/[^a-zA-Z0-9_]/g, '').toLowerCase() || 'user';
+  return `${prefix}_${Math.random().toString(36).slice(2, 7)}`;
+}
+
 // Signup endpoint
 router.post('/signup', async (req, res) => {
   try {
@@ -206,6 +211,68 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ 
       success: false,
       message: 'Server error during login. Please try again.',
+      error: error.message
+    });
+  }
+});
+
+// Google auth (client-side OAuth -> backend account upsert)
+router.post('/google', async (req, res) => {
+  try {
+    const { email, displayName, uid } = req.body || {};
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google email is required',
+        field: 'email'
+      });
+    }
+
+    const normalizedEmail = email.toLowerCase();
+    let user = await User.findOne({ email: normalizedEmail });
+
+    if (!user) {
+      let username = buildUniqueUsername(normalizedEmail);
+      // Ensure username uniqueness
+      while (await User.findOne({ username })) {
+        username = buildUniqueUsername(normalizedEmail);
+      }
+
+      user = await User.create({
+        email: normalizedEmail,
+        username,
+        displayName: displayName || username,
+        password: await bcrypt.hash(`google_${uid || Date.now()}`, 10),
+        createdAt: new Date()
+      });
+    } else if (!user.displayName && displayName) {
+      user.displayName = displayName;
+      await user.save();
+    }
+
+    const token = jwt.sign(
+      { id: user._id, userId: user._id, email: user.email },
+      JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      success: true,
+      message: 'Google auth successful',
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        displayName: user.displayName
+      }
+    });
+  } catch (error) {
+    console.error('Google auth error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during Google auth. Please try again.',
       error: error.message
     });
   }

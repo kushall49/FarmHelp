@@ -8,7 +8,6 @@ import logging
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.exceptions import HTTPException
-import requests
 
 # Import configuration
 from config import get_config, Config
@@ -135,21 +134,6 @@ def index():
 def health():
     return {"status": "ok", "ml": model_loader is not None}
 
-def _plantnet_identify(file_storage):
-    api_key = os.getenv('PLANTNET_API_KEY')
-    api_url = os.getenv('PLANTNET_API_URL', 'https://my-api.plantnet.org/v2/identify/all')
-    if not api_key:
-        return None, "PLANTNET_API_KEY is not set"
-
-    files = {
-        'images': (file_storage.filename or 'plant.jpg', file_storage.stream, file_storage.mimetype or 'image/jpeg')
-    }
-    data = [('organs', 'leaf')]
-    resp = requests.post(f"{api_url}?api-key={api_key}", files=files, data=data, timeout=30)
-    if resp.status_code != 200:
-        return None, f"PlantNet error: status {resp.status_code}"
-    return resp.json(), None
-
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
@@ -191,39 +175,10 @@ def analyze():
         
         # PRODUCTION: Check if model is loaded
         if model_loader is None or (not model_loader.is_loaded()):
-            # Fallback: Pl@ntNet species identification (API) if configured.
-            if 'file' in request.files:
-                plantnet_json, plantnet_err = _plantnet_identify(request.files['file'])
-                if plantnet_json and not plantnet_err:
-                    top = (plantnet_json.get('results') or [{}])[0]
-                    species = top.get('species') or {}
-                    common = (species.get('commonNames') or [])
-                    crop = (common[0] if common else (species.get('scientificNameWithoutAuthor') or 'Unknown'))
-                    score = float(top.get('score') or 0.0)
-                    confidence_pct = round(score * 100.0, 2)
-                    response = jsonify({
-                        'success': True,
-                        'source': 'plantnet',
-                        'crop': crop,
-                        'disease': 'Unknown (species identified)',
-                        'confidence': confidence_pct,
-                        'confidence_percentage': f"{confidence_pct:.2f}%",
-                        'predictions': [{
-                            'class_name': species.get('scientificNameWithoutAuthor') or crop,
-                            'confidence': score
-                        }],
-                        'recommendation': 'Species identified via Pl@ntNet. Disease model is not configured; enable a disease API or provide a trained model.',
-                        'recommendations': {'summary': 'Species identified; disease detection not configured.'},
-                        'processing_time_ms': 0
-                    })
-                    response.headers['Content-Type'] = 'application/json'
-                    response.status_code = 200
-                    return response
-
             logger.error('[FLASK] ❌ Model not loaded')
             response = jsonify({
                 'success': False,
-                'error': 'ML model not loaded and API fallback not configured. Set PLANTNET_API_KEY or provide a model file.',
+                'error': 'ML model not loaded. Please check server logs.',
                 'error_code': 'MODEL_NOT_LOADED',
                 'layer': 'ml_service',
                 'timestamp': int(time.time() * 1000)

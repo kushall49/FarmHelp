@@ -5,7 +5,12 @@ const JobRequest = require('../src/models/JobRequest');
 const User = require('../src/models/User');
 require('dotenv').config();
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://1ms23cs094_db_user:AEQZush8GtcXuvfH@cluster0.ug766o7.mongodb.net/farmmate';
+const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
+
+if (!MONGODB_URI) {
+  console.error('[CONFIG] Missing MongoDB connection string. Set MONGODB_URI (preferred) or MONGO_URI.');
+  process.exit(1);
+}
 
 // Generate secure test password hash (use env variable or secure random password)
 const generateTestPasswordHash = async () => {

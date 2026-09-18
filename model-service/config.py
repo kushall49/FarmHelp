@@ -21,8 +21,10 @@ class Config:
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:4000,http://localhost:19000').split(',')
     
     # Model Configuration
-    MODEL_PATH = os.getenv('MODEL_PATH', 'models/plant_disease_model.h5')
-    MODEL_TYPE = os.getenv('MODEL_TYPE', 'h5')  # 'h5' or 'tflite'
+    # Default to .keras because it's committed in this repo; .h5 may be absent in cloud deploys.
+    MODEL_PATH = os.getenv('MODEL_PATH', 'models/plant_disease_model.keras')
+    # Supported: 'keras', 'h5', 'tflite'. 'auto' infers from the file extension.
+    MODEL_TYPE = os.getenv('MODEL_TYPE', 'auto')
     INPUT_SIZE = (224, 224)  # Model input size
     TOP_K_PREDICTIONS = int(os.getenv('TOP_K_PREDICTIONS', 3))
     

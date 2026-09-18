@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
-const MONGODB_URI = 'mongodb+srv://1ms23cs094_db_user:AEQZush8GtcXuvfH@cluster0.ug766o7.mongodb.net/farmmate';
+const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI;
+
+if (!MONGODB_URI) {
+  console.error('[CONFIG] Missing MongoDB connection string. Set MONGODB_URI (preferred) or MONGO_URI.');
+  process.exit(1);
+}
 
 console.log('Testing MongoDB Atlas connection...');
 console.log('URI:', MONGODB_URI.replace(/:[^:@]+@/, ':***@')); // Hide password

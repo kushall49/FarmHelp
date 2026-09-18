@@ -2,6 +2,7 @@ node_modules
 dist
 .env
 .expo
+web-build
 *.log
 
 # TestSpirit automated debugging output

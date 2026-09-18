@@ -1,11 +1,8 @@
 import { Platform } from 'react-native';
+import { API_ORIGIN } from '../config/serviceConfig';
 
-// API configuration
-// Use localhost for web, local IP for mobile devices
-// Web production: set REACT_APP_API_ORIGIN in Vercel (same as Login/Signup).
-const API_BASE_URL = Platform.OS === 'web'
-  ? (process.env.REACT_APP_API_ORIGIN || process.env.API_URL || 'http://localhost:4000')
-  : (process.env.EXPO_PUBLIC_API_URL || 'http://10.253.160.3:4000');
+// Must match LoginScreen / axios — use serviceConfig (Vercel Preview safe).
+const API_BASE_URL = Platform.OS === 'web' ? API_ORIGIN : (process.env.EXPO_PUBLIC_API_URL || 'http://10.253.160.3:4000');
 
 export async function uploadImage(formData, token) {
   try {
