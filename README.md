@@ -1,4 +1,4 @@
-# 🌾 FarmHelp - AI-Powered Agricultural Platform
+# FarmHelp - AI-Powered Agricultural Platform
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-22.x-green.svg)](https://nodejs.org/)
@@ -10,7 +10,7 @@
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### **Prerequisites**
 - Node.js 22.x+
@@ -69,7 +69,7 @@ curl -X POST http://localhost:4000/api/plant/analyze \
 
 ---
 
-## ✨ Features
+##  Features
 
 ### 🔬 **AI Plant Disease Detection**
 - **38+ Disease Classes**: Tomato, Potato, Corn, Pepper, Grape, Apple, Cherry, Peach, Strawberry
@@ -79,14 +79,14 @@ curl -X POST http://localhost:4000/api/plant/analyze \
 - **GradCAM Visualization**: See exactly where the AI detected symptoms
 - **Mobile Optimized**: TensorFlow Lite quantized model (150MB → 12MB)
 
-### 💊 **Smart Fertilizer Recommendations**
+###  **Smart Fertilizer Recommendations**
 - **35+ Fertilizers**: NPK formulations, organics, fungicides, insecticides
 - **Disease-Specific Matching**: Automatic recommendations based on diagnosis
 - **Detailed Guidance**: Dosage, application method, safety warnings, timing
 - **Legal Compliance**: Status indicators and regulatory notes
 - **Safety First**: Prominent disclaimers encouraging expert consultation
 
-### 🔄 **Active Learning & Retraining**
+###  **Active Learning & Retraining**
 - **Confirmed Images Pipeline**: Experts validate predictions → added to training set
 - **Automated Retraining**: Runs weekly (Sunday 2 AM) when threshold met (100+ images)
 - **Manual Triggering**: Admin-initiated retraining on demand
@@ -95,7 +95,7 @@ curl -X POST http://localhost:4000/api/plant/analyze \
 - **Zero-Downtime**: New model loads automatically without service restart
 - **Training Reports**: JSON reports with accuracy, precision, recall, F1 metrics
 
-### 🚜 **Services Marketplace**
+### **Services Marketplace**
 - Find tractors, harvesters, equipment rentals
 - Post job requests for agricultural services
 - Hyper-local filtering (district, taluk, village)
@@ -109,7 +109,7 @@ curl -X POST http://localhost:4000/api/plant/analyze \
 - Image sharing and engagement
 - Searchable knowledge base
 
-### 🤖 **AI Chatbot**
+###  **AI Chatbot**
 - Natural language agricultural advice
 - Powered by Groq API
 - Context-aware conversations
@@ -117,7 +117,7 @@ curl -X POST http://localhost:4000/api/plant/analyze \
 
 ---
 
-## 🏗️ Architecture
+##  Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -199,7 +199,7 @@ Expert confirms → Copy to /data/confirmed/{disease}/
 
 ---
 
-## 📁 Project Structure
+## 📁  Project Structure
 
 ```
 farmhelp/
@@ -249,7 +249,7 @@ farmhelp/
 
 ---
 
-## 📚 API Documentation
+##  API Documentation
 
 ### **Base URL**: `http://localhost:4000`
 
@@ -281,7 +281,7 @@ GET    /api/retrain/status                     - Get model versions
 
 ---
 
-## 🐳 Deployment
+## Deployment
 
 ### **Docker Compose (Recommended)**
 
@@ -326,7 +326,7 @@ gunicorn -w 4 -b 0.0.0.0:5000 app:app
 
 ---
 
-## 🧪 Testing
+##  Testing
 
 ### **API Tests (Postman)**
 
@@ -349,7 +349,7 @@ newman run FarmHelp_API_Collection.postman_collection.json
 
 ---
 
-## 🎯 Quick Commands
+##  Quick Commands
 
 ```bash
 # Backend
@@ -374,7 +374,7 @@ docker-compose down              # Stop all
 
 ---
 
-## 🤝 Contributing
+##  Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
@@ -392,7 +392,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) for deta
 
 ---
 
-## 📞 Contact
+##  Contact
 
 - **Issues**: [GitHub Issues](https://github.com/yourusername/farmhelp/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/yourusername/farmhelp/discussions)
@@ -400,7 +400,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) for deta
 
 ---
 
-## 🤖 AI Assistant Continuation Prompt
+##  AI Assistant Continuation Prompt
 
 **For ChatGPT/Claude/GitHub Copilot:**
 
@@ -438,4 +438,4 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) for deta
 
 ---
 
-**Made with ❤️ for farmers everywhere** 🌾
+**Made with  for farmers everywhere** 
